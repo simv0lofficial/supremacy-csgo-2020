@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="alpha|Win32">
+      <Configuration>alpha</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="debug|Win32">
+      <Configuration>debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="release|Win32">
+      <Configuration>release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{a7a678cd-2511-435a-809c-54a72925046d}</ProjectGuid>
+    <RootNamespace>nemesis</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>supremacy_csgo</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>ClangCL</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <LLVMToolsVersion>16</LLVMToolsVersion>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>ClangCL</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <LLVMToolsVersion>16</LLVMToolsVersion>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='alpha|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>ClangCL</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <LLVMToolsVersion>16</LLVMToolsVersion>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='alpha|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)output\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)output\$(Configuration)\</IntDir>
+    <IncludePath>$(SolutionDir)dependencies\dxsdk\Include;$(SolutionDir)dependencies\freetype\include;$(SolutionDir)dependencies\;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)dependencies\dxsdk\Lib\x86;$(SolutionDir)dependencies\freetype\objs;$(SolutionDir)dependencies\;$(LibraryPath)</LibraryPath>
+    <SourcePath>$(SourcePath)</SourcePath>
+    <TargetName>system32</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)output\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)output\$(Configuration)\</IntDir>
+    <IncludePath>$(SolutionDir)dependencies\dxsdk\Include;$(SolutionDir)dependencies\freetype\include;$(SolutionDir)dependencies\;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)dependencies\dxsdk\Lib\x86;$(SolutionDir)dependencies\freetype\objs;$(SolutionDir)dependencies\;$(LibraryPath)</LibraryPath>
+    <SourcePath>$(SourcePath)</SourcePath>
+    <TargetName>system32</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='alpha|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)output\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)output\$(Configuration)\</IntDir>
+    <IncludePath>$(SolutionDir)dependencies\dxsdk\Include;$(SolutionDir)dependencies\freetype\include;$(SolutionDir)dependencies\;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)dependencies\dxsdk\Lib\x86;$(SolutionDir)dependencies\freetype\objs;$(SolutionDir)dependencies\;$(LibraryPath)</LibraryPath>
+    <SourcePath>$(SourcePath)</SourcePath>
+    <TargetName>system32</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">
+    <ClCompile>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>Default</LanguageStandard_C>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <AdditionalOptions>/Zc:char8_t-  /Zc:threadSafeInit- %(AdditionalOptions)</AdditionalOptions>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>d3d9.lib;d3dx9.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'">
+    <ClCompile>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>Default</LanguageStandard_C>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <AdditionalOptions>/Zc:char8_t-  /Zc:threadSafeInit- %(AdditionalOptions)</AdditionalOptions>
+      <DebugInformationFormat>None</DebugInformationFormat>
+      <Optimization>MaxSpeed</Optimization>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>d3d9.lib;d3dx9.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
+      <UACUIAccess>true</UACUIAccess>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='alpha|Win32'">
+    <ClCompile>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_NDEBUG;_CONSOLE;ALPHA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>Default</LanguageStandard_C>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <AdditionalOptions>/Zc:char8_t-  /Zc:threadSafeInit- %(AdditionalOptions)</AdditionalOptions>
+      <DebugInformationFormat>None</DebugInformationFormat>
+      <Optimization>MaxSpeed</Optimization>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>d3d9.lib;d3dx9.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
+      <UACUIAccess>true</UACUIAccess>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="context\impl\context.cpp" />
+    <ClCompile Include="dependencies\config_system\impl\config_system.cpp" />
+    <ClCompile Include="dependencies\guard\guard.cpp" />
+    <ClCompile Include="dependencies\imgui\clip.cpp" />
+    <ClCompile Include="dependencies\imgui\imgui.cpp" />
+    <ClCompile Include="dependencies\imgui\imgui_demo.cpp" />
+    <ClCompile Include="dependencies\imgui\imgui_draw.cpp" />
+    <ClCompile Include="dependencies\imgui\imgui_freetype.cpp" />
+    <ClCompile Include="dependencies\imgui\imgui_impl_dx9.cpp" />
+    <ClCompile Include="dependencies\imgui\imgui_impl_win32.cpp" />
+    <ClCompile Include="dependencies\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="dependencies\key_handler.cpp" />
+    <ClCompile Include="dependencies\minhook\buffer.c" />
+    <ClCompile Include="dependencies\minhook\hde\hde32.c" />
+    <ClCompile Include="dependencies\minhook\hook.c" />
+    <ClCompile Include="dependencies\minhook\trampoline.c" />
+    <ClCompile Include="dependencies\multi_thread\atomic_lock.cpp" />
+    <ClCompile Include="dependencies\multi_thread\multi_thread.cpp" />
+    <ClCompile Include="dependencies\multi_thread\mutex.cpp" />
+    <ClCompile Include="dependencies\multi_thread\packed_heap.cpp" />
+    <ClCompile Include="dependencies\multi_thread\semaphores.cpp" />
+    <ClCompile Include="dependencies\multi_thread\shared_mutex.cpp" />
+    <ClCompile Include="hacks\aim_bot\impl\aim_bot.cpp" />
+    <ClCompile Include="hacks\anim_sync\impl\anim_sync.cpp" />
+    <ClCompile Include="hacks\anti_aim\impl\anti_aim.cpp" />
+    <ClCompile Include="hacks\auto_wall\impl\auto_wall.cpp" />
+    <ClCompile Include="hacks\eng_pred\impl\eng_pred.cpp" />
+    <ClCompile Include="hacks\exploits\impl\exploits.cpp" />
+    <ClCompile Include="hacks\lag_comp\impl\lag_comp.cpp" />
+    <ClCompile Include="hacks\movement\impl\movement.cpp" />
+    <ClCompile Include="hacks\shots\impl\shots.cpp" />
+    <ClCompile Include="hacks\skins\impl\skins.cpp" />
+    <ClCompile Include="hacks\visuals\impl\visuals.cpp" />
+    <ClCompile Include="hooks\impl\hooks.cpp" />
+    <ClCompile Include="menu\impl\menu.cpp" />
+    <ClCompile Include="util\impl\util.cpp" />
+    <ClCompile Include="valve\net_vars\impl\net_vars.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="context\context.hpp" />
+    <ClInclude Include="dependencies\config_system\config_system.hpp" />
+    <ClInclude Include="dependencies\guard\guard.hpp" />
+    <ClInclude Include="dependencies\hash.hpp" />
+    <ClInclude Include="dependencies\imgui\clip.h" />
+    <ClInclude Include="dependencies\imgui\fonts.h" />
+    <ClInclude Include="dependencies\imgui\imconfig.h" />
+    <ClInclude Include="dependencies\imgui\imgui.h" />
+    <ClInclude Include="dependencies\imgui\imgui_freetype.h" />
+    <ClInclude Include="dependencies\imgui\imgui_impl_dx9.h" />
+    <ClInclude Include="dependencies\imgui\imgui_impl_win32.h" />
+    <ClInclude Include="dependencies\imgui\imgui_internal.h" />
+    <ClInclude Include="dependencies\imgui\imstb_rectpack.h" />
+    <ClInclude Include="dependencies\imgui\imstb_textedit.h" />
+    <ClInclude Include="dependencies\imgui\imstb_truetype.h" />
+    <ClInclude Include="dependencies\imgui\settings.hpp" />
+    <ClInclude Include="dependencies\key_handler.hpp" />
+    <ClInclude Include="dependencies\fonts.hpp" />
+    <ClInclude Include="dependencies\json.hpp" />
+    <ClInclude Include="dependencies\minhook\buffer.h" />
+    <ClInclude Include="dependencies\minhook\hde\hde32.h" />
+    <ClInclude Include="dependencies\minhook\hde\pstdint.h" />
+    <ClInclude Include="dependencies\minhook\hde\table32.h" />
+    <ClInclude Include="dependencies\minhook\minhook.h" />
+    <ClInclude Include="dependencies\minhook\trampoline.h" />
+    <ClInclude Include="dependencies\icons.hpp" />
+    <ClInclude Include="dependencies\multi_thread\atomic_lock.h" />
+    <ClInclude Include="dependencies\multi_thread\multi_thread.hpp" />
+    <ClInclude Include="dependencies\multi_thread\mutex.h" />
+    <ClInclude Include="dependencies\multi_thread\packed_heap.h" />
+    <ClInclude Include="dependencies\multi_thread\semaphores.h" />
+    <ClInclude Include="dependencies\multi_thread\shared_mutex.h" />
+    <ClInclude Include="dependencies\xorstr.hpp" />
+    <ClInclude Include="hacks\aim_bot\aim_bot.hpp" />
+    <ClInclude Include="hacks\anim_sync\anim_sync.hpp" />
+    <ClInclude Include="hacks\anti_aim\anti_aim.hpp" />
+    <ClInclude Include="hacks\auto_wall\auto_wall.hpp" />
+    <ClInclude Include="hacks\eng_pred\eng_pred.hpp" />
+    <ClInclude Include="hacks\exploits\exploits.hpp" />
+    <ClInclude Include="hacks\hacks.hpp" />
+    <ClInclude Include="hacks\lag_comp\lag_comp.hpp" />
+    <ClInclude Include="hacks\movement\movement.hpp" />
+    <ClInclude Include="hacks\shots\shots.hpp" />
+    <ClInclude Include="hacks\skins\skins.hpp" />
+    <ClInclude Include="hacks\visuals\visuals.hpp" />
+    <ClInclude Include="hooks\hooks.hpp" />
+    <ClInclude Include="math\math.hpp" />
+    <ClInclude Include="menu\menu.hpp" />
+    <ClInclude Include="util\util.hpp" />
+    <ClInclude Include="valve\net_vars\net_vars.hpp" />
+    <ClInclude Include="supremacy.hpp" />
+    <ClInclude Include="valve\entities\entities.hpp" />
+    <ClInclude Include="valve\interfaces\interfaces.hpp" />
+    <ClInclude Include="valve\other\other.hpp" />
+    <ClInclude Include="valve\valve.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="context\impl\context.inl" />
+    <None Include="hacks\aim_bot\impl\aim_bot.inl" />
+    <None Include="hacks\anim_sync\impl\anim_sync.inl" />
+    <None Include="hacks\anti_aim\impl\anti_aim.inl" />
+    <None Include="hacks\eng_pred\impl\eng_pred.inl" />
+    <None Include="hacks\exploits\impl\exploits.inl" />
+    <None Include="hacks\lag_comp\impl\lag_comp.inl" />
+    <None Include="hacks\movement\impl\movement.inl" />
+    <None Include="hacks\shots\impl\shots.inl" />
+    <None Include="hacks\visuals\impl\visuals.inl" />
+    <None Include="math\impl\math.inl" />
+    <None Include="util\impl\util.inl" />
+    <None Include="valve\entities\impl\entities.inl" />
+    <None Include="valve\interfaces\impl\interfaces.inl" />
+    <None Include="valve\net_vars\impl\net_vars.inl" />
+    <None Include="valve\other\impl\other.inl" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
