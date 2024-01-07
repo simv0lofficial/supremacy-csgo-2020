@@ -145,15 +145,6 @@ namespace supremacy::hacks {
 		}
 
 		point.m_valid = point.m_intersections >= point.m_needed_intersections;
-
-		if (target.m_lag_record->m_too_much_diff
-			&& point.m_valid) {
-			if (target.m_lag_record->m_side
-				&& target.m_lag_record->m_side < 3)
-				point.m_valid = point.m_intersections_low;
-			else
-				point.m_valid = point.m_intersections >= 2;
-		}
 	}
 
 	void c_aim_bot::scan_point(const aim_target_t& target, aim_point_t& point, const bool ignore_dmg) const {
@@ -260,15 +251,6 @@ namespace supremacy::hacks {
 		}
 	
 		point.m_valid = point.m_intersections >= point.m_needed_intersections;
-
-		if (target.m_lag_record->m_too_much_diff
-			&& point.m_valid) {
-			if (target.m_lag_record->m_side
-				&& target.m_lag_record->m_side < 3)
-				point.m_valid = point.m_intersections_low;
-			else
-				point.m_valid = point.m_intersections >= 2;
-		}
 	}
 
 	void c_aim_bot::scan_center_points(aim_target_t& target, const int hitgroups) const {
