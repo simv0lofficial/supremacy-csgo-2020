@@ -232,22 +232,24 @@ namespace supremacy::hacks {
 					anim_state->m_foot_yaw = math::angle_normalize(current->m_eye_angles.y);
 					break;
 				case 1:
-					anim_state->m_foot_yaw = math::angle_normalize(current->m_eye_angles.y + anim_state->m_min_body_yaw * 2.f);
+					anim_state->m_foot_yaw = math::angle_normalize(current->m_eye_angles.y - 60.f);
 					break;
 				case 2:
-					anim_state->m_foot_yaw = math::angle_normalize(current->m_eye_angles.y + anim_state->m_max_body_yaw * 2.f);
+					anim_state->m_foot_yaw = math::angle_normalize(current->m_eye_angles.y + 60.f);
 					break;
 				case 3:
-					anim_state->m_foot_yaw = math::angle_normalize(current->m_eye_angles.y + anim_state->m_min_body_yaw * 0.5f);
+					anim_state->m_foot_yaw = math::angle_normalize(current->m_eye_angles.y - 30.f);
 					break;
 				case 4:
-					anim_state->m_foot_yaw = math::angle_normalize(current->m_eye_angles.y + anim_state->m_max_body_yaw * 0.5f);
+					anim_state->m_foot_yaw = math::angle_normalize(current->m_eye_angles.y + 30.f);
 					break;
 				}
 
 				entry.m_player->eflags() &= ~0x1000u;
 
-				anim_state->m_prev_update_frame = valve::g_global_vars->m_frame_count - 1;
+				anim_state->m_prev_update_frame = 0;
+				if (anim_state->m_prev_update_time == valve::g_global_vars->m_cur_time)
+					anim_state->m_prev_update_time += valve::g_global_vars->m_interval_per_tick;
 
 				entry.m_player->client_side_anim() = g_context->allow_anim_update() = true;
 				entry.m_player->update_client_side_anim();
@@ -269,22 +271,24 @@ namespace supremacy::hacks {
 				anim_state->m_foot_yaw = math::angle_normalize(current->m_eye_angles.y);
 				break;
 			case 1:
-				anim_state->m_foot_yaw = math::angle_normalize(current->m_eye_angles.y + anim_state->m_min_body_yaw * 2.f);
+				anim_state->m_foot_yaw = math::angle_normalize(current->m_eye_angles.y - 60.f);
 				break;
 			case 2:
-				anim_state->m_foot_yaw = math::angle_normalize(current->m_eye_angles.y + anim_state->m_max_body_yaw * 2.f);
+				anim_state->m_foot_yaw = math::angle_normalize(current->m_eye_angles.y + 60.f);
 				break;
 			case 3:
-				anim_state->m_foot_yaw = math::angle_normalize(current->m_eye_angles.y + anim_state->m_min_body_yaw * 0.5f);
+				anim_state->m_foot_yaw = math::angle_normalize(current->m_eye_angles.y - 30.f);
 				break;
 			case 4:
-				anim_state->m_foot_yaw = math::angle_normalize(current->m_eye_angles.y + anim_state->m_max_body_yaw * 0.5f);
+				anim_state->m_foot_yaw = math::angle_normalize(current->m_eye_angles.y + 30.f);
 				break;
 			}
 
 			entry.m_player->eflags() &= ~0x1000u;
 
-			anim_state->m_prev_update_frame = valve::g_global_vars->m_frame_count - 1;
+			anim_state->m_prev_update_frame = 0;
+			if (anim_state->m_prev_update_time == valve::g_global_vars->m_cur_time)
+				anim_state->m_prev_update_time += valve::g_global_vars->m_interval_per_tick;
 
 			entry.m_player->client_side_anim() = g_context->allow_anim_update() = true;
 			entry.m_player->update_client_side_anim();
@@ -514,12 +518,8 @@ end:
 			current->m_type = 19;
 		}
 
-		if (current->m_max_body_rotation < 38.f) {
+		if (current->m_max_body_rotation < 38.f)
 			current->m_too_much_diff = true;
-
-			current->m_priority = 2;
-			current->m_side = current->m_side == 1 ? 3 : 4;
-		}
 	}
 
 	bool c_anim_sync::setup_bones(
@@ -836,7 +836,9 @@ end:
 
 		valve::g_local_player->set_local_view_angles(view_angles);
 
-		anim_state->m_prev_update_frame = valve::g_global_vars->m_frame_count - 1;
+		anim_state->m_prev_update_frame = 0;
+		if (anim_state->m_prev_update_time == valve::g_global_vars->m_cur_time)
+			anim_state->m_prev_update_time += valve::g_global_vars->m_interval_per_tick;
 
 		const auto backup_abs_velocity = valve::g_local_player->abs_velocity();
 
