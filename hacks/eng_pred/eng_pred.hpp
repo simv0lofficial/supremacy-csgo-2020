@@ -4,9 +4,7 @@ namespace supremacy::hacks {
 	class c_eng_pred {
 	private:
 		struct {
-			float m_cur_time{}, m_frame_time{}, m_velocity_modifier{};
-
-			bool m_in_prediction{}, m_first_time_predicted{};
+			float m_cur_time{}, m_frame_time{};
 		}								m_backup{};
 
 		struct net_vars_t {
@@ -71,7 +69,7 @@ namespace supremacy::hacks {
 			m_min_inaccuracy{},
 			m_postpone_fire_ready_time{},
 			m_recoil_index{}, m_accuracy_penalty{},
-			m_velocity_modifier{}, m_net_velocity_modifier{ };
+			m_velocity_modifier{}, m_net_velocity_modifier{ 1.f };
 
 		std::array< net_vars_t, 150u >		m_net_vars{};
 		std::array< local_data_t, 150u >	m_local_data{};

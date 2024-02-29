@@ -30,14 +30,9 @@
     <ClCompile Include="dependencies\imgui\imgui_widgets.cpp" />
     <ClCompile Include="dependencies\config_system\impl\config_system.cpp" />
     <ClCompile Include="hacks\skins\impl\skins.cpp" />
-    <ClCompile Include="dependencies\multi_thread\atomic_lock.cpp" />
-    <ClCompile Include="dependencies\multi_thread\multi_thread.cpp" />
-    <ClCompile Include="dependencies\multi_thread\mutex.cpp" />
-    <ClCompile Include="dependencies\multi_thread\packed_heap.cpp" />
-    <ClCompile Include="dependencies\multi_thread\semaphores.cpp" />
-    <ClCompile Include="dependencies\multi_thread\shared_mutex.cpp" />
     <ClCompile Include="util\impl\util.cpp" />
-    <ClCompile Include="dependencies\guard\guard.cpp" />
+    <ClCompile Include="dependencies\bass\dll.cpp" />
+    <ClCompile Include="dependencies\bass\dll_image.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="supremacy.hpp" />
@@ -87,14 +82,12 @@
     <ClInclude Include="dependencies\config_system\config_system.hpp" />
     <ClInclude Include="dependencies\hash.hpp" />
     <ClInclude Include="hacks\skins\skins.hpp" />
-    <ClInclude Include="dependencies\multi_thread\atomic_lock.h" />
-    <ClInclude Include="dependencies\multi_thread\multi_thread.hpp" />
-    <ClInclude Include="dependencies\multi_thread\mutex.h" />
-    <ClInclude Include="dependencies\multi_thread\packed_heap.h" />
-    <ClInclude Include="dependencies\multi_thread\semaphores.h" />
-    <ClInclude Include="dependencies\multi_thread\shared_mutex.h" />
-    <ClInclude Include="dependencies\guard\guard.hpp" />
     <ClInclude Include="dependencies\xorstr.hpp" />
+    <ClInclude Include="dependencies\bass\API.h" />
+    <ClInclude Include="dependencies\bass\bass.h" />
+    <ClInclude Include="dependencies\bass\dll.h" />
+    <ClInclude Include="dependencies\bass\random.h" />
+    <ClInclude Include="dependencies\bass\string_obfuscation.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="valve\entities\impl\entities.inl" />

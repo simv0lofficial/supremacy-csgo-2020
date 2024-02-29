@@ -8,107 +8,74 @@ namespace supremacy::hooks
 		case WM_LBUTTONDOWN:
 			g_input->set_down(VK_LBUTTON);
 			break;
-
 		case WM_LBUTTONUP:
 			g_input->set_up(VK_LBUTTON);
 			break;
-
 		case WM_RBUTTONDOWN:
 			g_input->set_down(VK_RBUTTON);
 			break;
-
 		case WM_RBUTTONUP:
 			g_input->set_up(VK_RBUTTON);
 			break;
-
 		case WM_MBUTTONDOWN:
 			g_input->set_down(VK_MBUTTON);
 			break;
-
 		case WM_MBUTTONUP:
 			g_input->set_up(VK_MBUTTON);
 			break;
-
 		case WM_XBUTTONDOWN:
 			if (GET_XBUTTON_WPARAM(wparam) == XBUTTON1)
 				g_input->set_down(VK_XBUTTON1);
-
 			else if (GET_XBUTTON_WPARAM(wparam) == XBUTTON2)
 				g_input->set_down(VK_XBUTTON2);
-
 			break;
-
 		case WM_XBUTTONUP:
 			if (GET_XBUTTON_WPARAM(wparam) == XBUTTON1)
 				g_input->set_up(VK_XBUTTON1);
-
 			else if (GET_XBUTTON_WPARAM(wparam) == XBUTTON2)
 				g_input->set_up(VK_XBUTTON2);
-
 			break;
-
 		case WM_KEYDOWN:
 			if ((size_t)wparam < g_input->m_keys.size())
 				g_input->set_down(wparam);
-
 			break;
-
 		case WM_KEYUP:
 			if ((size_t)wparam < g_input->m_keys.size())
 				g_input->set_up(wparam);
-
 			break;
-
 		case WM_SYSKEYDOWN:
 			if (wparam == VK_MENU)
 				g_input->set_down(VK_MENU);
-
 			break;
-
 		case WM_SYSKEYUP:
 			if (wparam == VK_MENU)
 				g_input->set_up(VK_MENU);
-
 			break;
-
 		case WM_MOUSEWHEEL:
 			g_input->m_scroll = (GET_WHEEL_DELTA_WPARAM(wparam) / WHEEL_DELTA);
 			break;
-
 		case WM_CHAR:
 			switch (wparam) {
 			case VK_BACK:
 				if (!g_input->m_buffer.empty())
 					g_input->m_buffer.pop_back();
 				break;
-
 			case VK_ESCAPE:
 			case VK_TAB:
 			case VK_RETURN:
 				break;
-
 			default:
 				if (wparam > 0 && wparam < 0x10000)
 					g_input->m_buffer += static_cast<char>(wparam);
-
 				break;
 			}
-
 			break;
-
 		default:
 			break;
 		}
 
-		if (msg == WM_KEYDOWN)
-		{
-			if (wparam == sdk::g_config_system->menu_key)
-				g_menu->set_menu_opened(!g_menu->is_menu_opened());
-		}
-
 		if (g_menu->m_is_opened) {
 			ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam);
-
 			if (wparam != 'W' && wparam != 'A' && wparam != 'S' && wparam != 'D' && wparam != VK_SHIFT && wparam != VK_CONTROL && wparam != VK_TAB && wparam != VK_SPACE || ui::GetIO().WantTextInput)
 				return true;
 		}
@@ -120,6 +87,35 @@ namespace supremacy::hooks
 		IDirect3DDevice9* const device, RECT* const src_rect,
 		RECT* const dst_rect, const HWND dst_wnd_override, RGNDATA* const dirty_region
 	) {
+		if (g_input->get_key_press(sdk::g_config_system->manual_left_key)) {
+			if (hacks::g_anti_aim->manual_side() != 1)
+				hacks::g_anti_aim->manual_side() = 1;
+			else
+				hacks::g_anti_aim->manual_side() = 0;
+		}
+
+		if (g_input->get_key_press(sdk::g_config_system->manual_right_key)) {
+			if (hacks::g_anti_aim->manual_side() != 2)
+				hacks::g_anti_aim->manual_side() = 2;
+			else
+				hacks::g_anti_aim->manual_side() = 0;
+		}
+
+		if (g_input->get_key_press(sdk::g_config_system->manual_back_key)) {
+			if (hacks::g_anti_aim->manual_side() != 3)
+				hacks::g_anti_aim->manual_side() = 3;
+			else
+				hacks::g_anti_aim->manual_side() = 0;
+		}
+
+		if (g_input->get_key_press(sdk::g_config_system->menu_key))
+			g_menu->set_menu_opened(!g_menu->is_menu_opened());
+
+		if (g_menu->m_is_opened
+			&& sdk::g_config_system->menu_key
+			&& g_input->get_key_press(VK_ESCAPE))
+			g_menu->set_menu_opened(false);
+
 		static bool initialized_renderer = false;
 
 		if (!initialized_renderer)
@@ -192,19 +188,6 @@ namespace supremacy::hooks
 	}
 
 	void __fastcall paint_traverse(const std::uintptr_t ecx, const std::uintptr_t edx, unsigned int panel, bool force_repaint, bool force) {
-#ifndef ALPHA
-#ifndef _DEBUG
-		static auto once = true;
-		if (once) {
-			char filename[MAX_PATH] = { 0u };
-			GetModuleFileName(g_context->h_module, filename, MAX_PATH);
-			if (!strstr(filename, xorstr_("binary2.ini")))
-				g_guard->crash();
-			else
-				once = false;
-		}
-#endif
-#endif
 		const auto panel_name = valve::g_panel->get_panel_name(panel);
 
 		if (strstr(panel_name, xorstr_("GameConsole"))
@@ -240,12 +223,7 @@ namespace supremacy::hooks
 
 	void __fastcall paint(const std::uintptr_t ecx, const std::uintptr_t edx, const int mode) {
 		orig_paint(ecx, edx, mode);
-#ifndef ALPHA
-#ifndef _DEBUG
-		if (!g_guard->loader_run)
-			g_guard->clear_mbr();
-#endif
-#endif
+
 		if (mode & 1 || mode & 2) {
 			valve::g_surface->start_drawing();
 
@@ -372,6 +350,15 @@ namespace supremacy::hooks
 	}
 
 	void __stdcall chl_create_move(const int seq_number, const float input_sample_frame_time, const bool active, bool& send_packet) {
+		orig_chl_create_move(valve::g_client, seq_number, input_sample_frame_time, active);
+
+		send_packet = true;
+
+		hacks::g_movement->should_fake_duck() = false;
+
+		if (!valve::g_local_player)
+			return;
+
 		if (g_context->should_auto_buy()
 			&& valve::g_local_player->alive()
 			&& valve::g_local_player->money() >= sdk::g_config_system->auto_buy_minimal_money) {
@@ -504,20 +491,39 @@ namespace supremacy::hooks
 			g_context->should_auto_buy() = false;
 		}
 
-		orig_chl_create_move(valve::g_client, seq_number, input_sample_frame_time, active);
-
-		send_packet = true;
-
-		hacks::g_movement->should_fake_duck() = false;
-
-		if (!valve::g_local_player)
-			return;
-
 		auto& user_cmd = valve::g_input->m_cmds[seq_number % 150];
-		auto& verified_user_cmd = valve::g_input->m_verified_cmds[seq_number % 150];
-		if (!user_cmd.m_number
-			|| !active)
+		if (!user_cmd.m_number)
 			return;
+
+		auto wish_angles = user_cmd.m_view_angles;
+
+		const auto net_channel_info = valve::g_engine->net_channel_info();
+		if (!net_channel_info)
+			return;
+
+		auto& net_info = g_context->net_info();
+
+		const auto update_rate = std::clamp(
+			g_context->cvars().m_cl_updaterate->get_float(),
+			g_context->cvars().m_sv_minupdaterate->get_float(),
+			g_context->cvars().m_sv_maxupdaterate->get_float()
+		);
+
+		const auto lerp_ratio = std::clamp(
+			g_context->cvars().m_cl_interp_ratio->get_float(),
+			g_context->cvars().m_sv_client_min_interp_ratio->get_float(),
+			g_context->cvars().m_sv_client_max_interp_ratio->get_float()
+		);
+
+		net_info.m_lerp = std::clamp(
+			lerp_ratio / update_rate,
+			g_context->cvars().m_cl_interp->get_float(),
+			1.f
+		);
+
+		net_info.m_latency = { net_channel_info->latency(1), net_channel_info->latency(0) };
+		net_info.m_server_tick = valve::g_global_vars->m_tick_count + valve::to_ticks(net_info.m_latency.m_out + net_info.m_latency.m_in);
+		net_info.m_on_local_server = !strcmp(net_channel_info->ip(), xorstr_("loopback"));
 
 		hacks::g_visuals->on_pre_create_move(user_cmd);
 
@@ -527,9 +533,8 @@ namespace supremacy::hooks
 			valve::g_engine->exec_cmd(last_team == 2 ? xorstr_("jointeam 2") : xorstr_("jointeam 3"));
 			reset = false;
 		}
-
-		if (g_context->switch_lagcompensation_state()) {
-			const auto backup_team = valve::g_local_player->team();
+		const auto backup_team = valve::g_local_player->team();
+		if (g_context->switch_lagcompensation_state()) {			
 			if (backup_team == 1)
 				g_context->cvars().m_cl_lagcompensation->set_int(!g_context->cvars().m_cl_lagcompensation->get_bool());
 			else {
@@ -604,18 +609,8 @@ namespace supremacy::hooks
 
 					if (sdk::g_config_system->remove_recoil)
 						user_cmd.m_view_angles -= valve::g_local_player->aim_punch() * g_context->cvars().m_weapon_recoil_scale->get_float();
-
-					user_cmd.m_view_angles.x = std::remainder(user_cmd.m_view_angles.x, 360.f);
-					user_cmd.m_view_angles.y = std::remainder(user_cmd.m_view_angles.y, 360.f);
-					user_cmd.m_view_angles.z = std::remainder(user_cmd.m_view_angles.z, 360.f);
-
-					user_cmd.m_view_angles.x = std::clamp(user_cmd.m_view_angles.x, -89.f, 89.f);
-					user_cmd.m_view_angles.y = std::clamp(user_cmd.m_view_angles.y, -180.f, 180.f);
-					user_cmd.m_view_angles.z = std::clamp(user_cmd.m_view_angles.z, -90.f, 90.f);
 				}
 			}
-
-			hacks::g_movement->peek_assistence(user_cmd);
 
 			hacks::g_anti_aim->set_pitch(user_cmd);
 
@@ -642,7 +637,7 @@ namespace supremacy::hooks
 					anim_data.m_shot_valid_wpn = false;
 
 				if (anim_data.m_shot_valid_wpn) {
-					if (!hacks::g_movement->should_fake_duck()) {
+					if (!hacks::g_movement->should_fake_duck()) {						
 						hacks::g_exploits->cur_shift_amount() = hacks::g_exploits->next_shift_amount();
 
 						g_context->flags() &= ~e_context_flags::choke;
@@ -658,104 +653,57 @@ namespace supremacy::hooks
 							g_context->shoot_pos(), &aim_target,
 							hacks::g_exploits->next_shift_amount()
 						);
+
 						if (aim_target.m_entry
 							&& aim_target.m_lag_record
 							&& aim_target.m_entry->m_player)
 							if (const auto player_info = valve::g_engine->player_info(aim_target.m_entry->m_player->index()); player_info.has_value()) {
 #ifdef ALPHA
-								const auto negative_delta = abs(aim_target.m_entry->m_server_rate - aim_target.m_entry->m_negative_rate);
-								const auto positive_delta = abs(aim_target.m_entry->m_server_rate - aim_target.m_entry->m_positive_rate);
-								const auto zero_delta = abs(aim_target.m_entry->m_server_rate - aim_target.m_entry->m_zero_rate);
-
 								util::g_notify->print_logo();
 								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("fired shot at %s (hc: %d | dmg: %d | aimed: %s | sp: %s | bt: %d | type: %d | side: %d | lc: %s | choked: %d | max body yaw: %.0f)\n"),
 									player_info.value().m_name,
 									aim_target.m_hit_chance,
 									aim_target.m_dmg,
 									util::translate_hitgroup(aim_target.m_point.m_hitgroup),
-									util::translate_safe_points(aim_target.m_point.m_intersections, aim_target.m_point.m_intersections_low),
-									aim_target.m_lag_record->m_extrapolated ? aim_target.m_lag_record->m_extrapolate_ticks : std::max(0, (valve::g_global_vars->m_tick_count - valve::to_ticks(aim_target.m_lag_record->m_sim_time))),
+									util::translate_safe_points(aim_target.m_point.m_intersections, aim_target.m_point.m_low_intersections),
+									aim_target.m_lag_record->m_extrapolated ? std::min(0, -aim_target.m_lag_record->m_extrapolate_ticks) : std::max(0, (valve::g_global_vars->m_tick_count - valve::to_ticks(aim_target.m_lag_record->m_sim_time))),
 									aim_target.m_lag_record->m_type,
 									aim_target.m_lag_record->m_side,
 									util::bool_as_text(aim_target.m_lag_record->m_broke_lc),
 									aim_target.m_lag_record->m_sim_ticks - 1,
 									aim_target.m_lag_record->m_max_body_rotation
-								);
-
-								util::g_notify->print_logo();
-								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("rates: %f %f %f %f | %s\ndeltas: %f %f %f\n\n"),
-									aim_target.m_entry->m_server_rate,
-									aim_target.m_entry->m_negative_rate,
-									aim_target.m_entry->m_positive_rate,
-									aim_target.m_entry->m_zero_rate,
-									util::bool_as_text(aim_target.m_entry->m_negative_delta),
-									negative_delta,
-									positive_delta,
-									zero_delta
 								);
 #else
 #ifdef _DEBUG
-								const auto negative_delta = abs(aim_target.m_entry->m_server_rate - aim_target.m_entry->m_negative_rate);
-								const auto positive_delta = abs(aim_target.m_entry->m_server_rate - aim_target.m_entry->m_positive_rate);
-								const auto zero_delta = abs(aim_target.m_entry->m_server_rate - aim_target.m_entry->m_zero_rate);
-
 								util::g_notify->print_logo();
 								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("fired shot at %s (hc: %d | dmg: %d | aimed: %s | sp: %s | bt: %d | type: %d | side: %d | lc: %s | choked: %d | max body yaw: %.0f)\n"),
 									player_info.value().m_name,
 									aim_target.m_hit_chance,
 									aim_target.m_dmg,
 									util::translate_hitgroup(aim_target.m_point.m_hitgroup),
-									util::translate_safe_points(aim_target.m_point.m_intersections, aim_target.m_point.m_intersections_low),
-									aim_target.m_lag_record->m_extrapolated ? aim_target.m_lag_record->m_extrapolate_ticks : std::max(0, (valve::g_global_vars->m_tick_count - valve::to_ticks(aim_target.m_lag_record->m_sim_time))),
+									util::translate_safe_points(aim_target.m_point.m_intersections, aim_target.m_point.m_low_intersections),
+									aim_target.m_lag_record->m_extrapolated ? std::min(0, -aim_target.m_lag_record->m_extrapolate_ticks) : std::max(0, (valve::g_global_vars->m_tick_count - valve::to_ticks(aim_target.m_lag_record->m_sim_time))),
 									aim_target.m_lag_record->m_type,
 									aim_target.m_lag_record->m_side,
 									util::bool_as_text(aim_target.m_lag_record->m_broke_lc),
 									aim_target.m_lag_record->m_sim_ticks - 1,
 									aim_target.m_lag_record->m_max_body_rotation
 								);
-
-								util::g_notify->print_logo();
-								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("rates: %f %f %f %f | %s\ndeltas: %f %f %f\n\n"),
-									aim_target.m_entry->m_server_rate,
-									aim_target.m_entry->m_negative_rate,
-									aim_target.m_entry->m_positive_rate,
-									aim_target.m_entry->m_zero_rate,
-									util::bool_as_text(aim_target.m_entry->m_negative_delta),
-									negative_delta,
-									positive_delta,
-									zero_delta
-								);
 #else
 								if (g_context->debug_build) {
-									const auto negative_delta = abs(aim_target.m_entry->m_server_rate - aim_target.m_entry->m_negative_rate);
-									const auto positive_delta = abs(aim_target.m_entry->m_server_rate - aim_target.m_entry->m_positive_rate);
-									const auto zero_delta = abs(aim_target.m_entry->m_server_rate - aim_target.m_entry->m_zero_rate);
-
 									util::g_notify->print_logo();
 									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("fired shot at %s (hc: %d | dmg: %d | aimed: %s | sp: %s | bt: %d | type: %d | side: %d | lc: %s | choked: %d | max body yaw: %.0f)\n"),
 										player_info.value().m_name,
 										aim_target.m_hit_chance,
 										aim_target.m_dmg,
 										util::translate_hitgroup(aim_target.m_point.m_hitgroup),
-										util::translate_safe_points(aim_target.m_point.m_intersections, aim_target.m_point.m_intersections_low),
-										aim_target.m_lag_record->m_extrapolated ? aim_target.m_lag_record->m_extrapolate_ticks : std::max(0, (valve::g_global_vars->m_tick_count - valve::to_ticks(aim_target.m_lag_record->m_sim_time))),
+										util::translate_safe_points(aim_target.m_point.m_intersections, aim_target.m_point.m_low_intersections),
+										aim_target.m_lag_record->m_extrapolated ? std::min(0, -aim_target.m_lag_record->m_extrapolate_ticks) : std::max(0, (valve::g_global_vars->m_tick_count - valve::to_ticks(aim_target.m_lag_record->m_sim_time))),
 										aim_target.m_lag_record->m_type,
 										aim_target.m_lag_record->m_side,
 										util::bool_as_text(aim_target.m_lag_record->m_broke_lc),
 										aim_target.m_lag_record->m_sim_ticks - 1,
 										aim_target.m_lag_record->m_max_body_rotation
-									);
-
-									util::g_notify->print_logo();
-									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("rates: %f %f %f %f | %s\ndeltas: %f %f %f\n\n"),
-										aim_target.m_entry->m_server_rate,
-										aim_target.m_entry->m_negative_rate,
-										aim_target.m_entry->m_positive_rate,
-										aim_target.m_entry->m_zero_rate,
-										util::bool_as_text(aim_target.m_entry->m_negative_delta),
-										negative_delta,
-										positive_delta,
-										zero_delta
 									);
 								}
 #endif
@@ -780,6 +728,8 @@ namespace supremacy::hooks
 			}
 
 			send_packet = !(g_context->flags() & e_context_flags::choke);
+
+			hacks::g_movement->peek_assistence(wish_angles, user_cmd);
 		}
 		else {
 			send_packet = false;
@@ -805,13 +755,16 @@ namespace supremacy::hooks
 		if (!send_packet) {
 			auto& net_channel = valve::g_client_state->m_net_channel;
 
-			const auto backup_choked_packets = net_channel->m_choked_packets;
+			if (net_channel->m_choked_packets
+				&& !(net_channel->m_choked_packets % 4)) {
+				const auto backup_choked_packets = net_channel->m_choked_packets;
 
-			net_channel->m_choked_packets = 0;
-			net_channel->send_datagram(0);
-			--net_channel->m_out_seq_number;
+				net_channel->m_choked_packets = 0;
+				net_channel->send_datagram(0);
+				--net_channel->m_out_seq_number;
 
-			net_channel->m_choked_packets = backup_choked_packets;
+				net_channel->m_choked_packets = backup_choked_packets;
+			}
 		}
 		else {
 			g_context->broke_lc() = (valve::g_local_player->origin() - g_context->last_sent_origin()).length_2d_sqr() > 4096.f;
@@ -829,7 +782,7 @@ namespace supremacy::hooks
 				local_data.m_adjusted_tick_base = hacks::g_exploits->adjust_tick_base(
 					valve::g_client_state->m_choked_cmds + 1, 1, -valve::g_client_state->m_choked_cmds
 				);
-			}
+			}			
 		}
 
 		g_context->last_cmd_number() = user_cmd.m_number;
@@ -844,23 +797,27 @@ namespace supremacy::hooks
 
 		valve::g_local_player->velocity_modifier() = hacks::g_eng_pred->velocity_modifier();
 
-		verified_user_cmd = { user_cmd, user_cmd.calc_checksum() };
+		valve::g_input->m_verified_cmds[seq_number % 150] = { user_cmd, user_cmd.calc_checksum() };
 	}
 
 	void __stdcall frame_stage_notify(const valve::e_frame_stage stage) {
 		hacks::g_eng_pred->last_frame_stage() = stage;
-		g_context->cvars().m_cl_threaded_bone_setup->set_int(1);
-		g_context->cvars().m_cl_extrapolate->set_int(0);
 
-		if (!valve::g_local_player)
+		if (!valve::g_local_player
+			|| !valve::g_engine->in_game())
 			return orig_frame_stage_notify(stage);
 
-		const auto in_game = valve::g_engine->in_game();
-
-		if (stage == valve::e_frame_stage::render_start)
+		if (stage == valve::e_frame_stage::render_start) {
 			hacks::g_visuals->on_render_start();
-				
-		if (in_game) {
+
+			if (hacks::g_exploits->type() == 4) {
+				auto& var_mapping = valve::g_local_player->var_mapping();
+
+				for (int i{}; i < var_mapping.m_interpolated_entries; ++i)
+					var_mapping.m_entries.at(i).m_needs_to_interpolate = false;
+			}
+
+			const auto correction_ticks = hacks::g_exploits->calc_correction_ticks();
 			for (auto i = 1; i <= valve::g_global_vars->m_max_clients; ++i) {
 				const auto player = static_cast<valve::c_player*>(
 					valve::g_entity_list->find_entity(i)
@@ -868,10 +825,20 @@ namespace supremacy::hooks
 				if (!player
 					|| player->dormant()
 					|| !player->alive()
-					|| player == valve::g_local_player && !hacks::g_exploits->in_charge())
+					|| player == valve::g_local_player)
 					continue;
 
 				auto& entry = hacks::g_lag_comp->entry(i - 1);
+
+				if (player->sim_time() == player->old_sim_time()
+					|| (entry.m_unk = false, correction_ticks == -1)
+					|| std::abs(valve::to_ticks(player->sim_time()) - valve::g_client_state->m_server_tick) <= (correction_ticks + 1))
+				{
+					if (!entry.m_unk)
+						continue;
+				}
+				else
+					entry.m_unk = true;
 
 				auto& var_mapping = player->var_mapping();
 
@@ -883,36 +850,34 @@ namespace supremacy::hooks
 		orig_frame_stage_notify(stage);
 
 		if (stage == valve::e_frame_stage::net_update_end) {
-			if (in_game) {
-				if (sdk::g_config_system->ragdolls
-					|| sdk::g_config_system->disable_rendering_of_ragdolls) {
-					for (auto i = 1; i <= valve::g_entity_list->highest_index(); ++i) {
-						const auto entity = valve::g_entity_list->find_entity(i);
-						if (!entity)
-							continue;
+			if (sdk::g_config_system->ragdolls
+				|| sdk::g_config_system->disable_rendering_of_ragdolls) {
+				for (auto i = 1; i <= valve::g_entity_list->highest_index(); ++i) {
+					const auto entity = valve::g_entity_list->find_entity(i);
+					if (!entity)
+						continue;
 
-						const auto client_class = entity->client_class();
-						if (!client_class
-							|| client_class->m_class_id != valve::e_class_id::ragdoll)
-							continue;
+					const auto client_class = entity->client_class();
+					if (!client_class
+						|| client_class->m_class_id != valve::e_class_id::ragdoll)
+						continue;
 
-						entity->use_fast_path() = false;
-					}
+					entity->use_fast_path() = false;
 				}
-
-				const auto correction_ticks = hacks::g_exploits->calc_correction_ticks();
-				if (correction_ticks == -1)
-					hacks::g_exploits->correction_amount() = 0;
-				else {
-					if (valve::g_local_player->sim_time() > valve::g_local_player->old_sim_time()) {
-						const auto delta = valve::to_ticks(valve::g_local_player->sim_time()) - valve::g_client_state->m_server_tick;
-						if (std::abs(delta) <= correction_ticks)
-							hacks::g_exploits->correction_amount() = delta;
-					}
-				}
-
-				valve::g_engine->fire_events();
 			}
+
+			const auto correction_ticks = hacks::g_exploits->calc_correction_ticks();
+			if (correction_ticks == -1)
+				hacks::g_exploits->correction_amount() = 0;
+			else {
+				if (valve::g_local_player->sim_time() > valve::g_local_player->old_sim_time()) {
+					const auto delta = valve::to_ticks(valve::g_local_player->sim_time()) - valve::g_client_state->m_server_tick;
+					if (std::abs(delta) <= correction_ticks)
+						hacks::g_exploits->correction_amount() = delta;
+				}
+			}
+
+			valve::g_engine->fire_events();
 
 			hacks::g_shots->on_net_update();
 
@@ -920,23 +885,21 @@ namespace supremacy::hooks
 		}
 		else if (stage == valve::e_frame_stage::render_end)
 			hacks::g_visuals->on_render_end();
-		else if (stage == valve::e_frame_stage::net_update_post_data_update_start)			
+		else if (stage == valve::e_frame_stage::net_update_post_data_update_start)
 			hacks::g_visuals->on_post_data_update_start();
+		
+		if (const auto view_model = valve::g_local_player->view_model()) {
+			static float cycle{}, anim_time{};
 
-		if (in_game) {
-			if (const auto view_model = valve::g_local_player->view_model()) {
-				static float cycle{}, anim_time{};
-
-				if (stage == valve::e_frame_stage::net_update_post_data_update_start) {
-					view_model->cycle() = cycle;
-					view_model->anim_time() = anim_time;
-				}
-
-				cycle = view_model->cycle();
-				anim_time = view_model->anim_time();
+			if (stage == valve::e_frame_stage::net_update_post_data_update_start) {
+				view_model->cycle() = cycle;
+				view_model->anim_time() = anim_time;
 			}
-		}
 
+			cycle = view_model->cycle();
+			anim_time = view_model->anim_time();
+		}
+	
 		hacks::g_visuals->kill_feed();
 	}
 
@@ -1002,7 +965,7 @@ namespace supremacy::hooks
 
 			return true;
 		}
-#if 0
+
 		if (const auto backup_last_setup_bones_frame = player->last_setup_bones_frame()) {
 			const auto backup_frame_count = valve::g_global_vars->m_frame_count;
 
@@ -1044,7 +1007,7 @@ namespace supremacy::hooks
 				return ret;
 			}
 		}
-#endif
+
 		return orig_setup_bones(ecx, edx, bones, max_bones, mask, time);
 	}
 
@@ -1112,29 +1075,13 @@ namespace supremacy::hooks
 		bone_flags = backup_bone_flags;
 	}
 
-	bool __fastcall should_skip_animframe()	{
-		return false;
-	}
-
 	void __fastcall packet_start(
 		const std::uintptr_t ecx, const std::uintptr_t edx, const int in_seq, const int out_acked
 	) {
-#ifdef ALPHA
 		if (!valve::g_local_player
 			|| !valve::g_local_player->alive())
 			return orig_packet_start(ecx, edx, in_seq, out_acked);
-#else
-#ifdef _DEBUG
-		if (!valve::g_local_player
-			|| !valve::g_local_player->alive())
-			return orig_packet_start(ecx, edx, in_seq, out_acked);
-#else
-		if (!valve::g_local_player
-			|| !valve::g_local_player->alive()
-			|| (!g_context->net_info().m_on_local_server && !g_guard->serial_valid))
-			return orig_packet_start(ecx, edx, in_seq, out_acked);
-#endif
-#endif
+
 		auto& sented_cmds = g_context->sented_cmds();
 		if (sented_cmds.empty()
 			|| std::find(sented_cmds.rbegin(), sented_cmds.rend(), out_acked) == sented_cmds.rend())
@@ -1154,22 +1101,10 @@ namespace supremacy::hooks
 	}
 
 	void __fastcall packet_end(const std::uintptr_t ecx, const std::uintptr_t edx) {
-#ifdef ALPHA
 		if (!valve::g_local_player
 			|| valve::g_client_state->m_server_tick != valve::g_client_state->m_delta_tick)
 			return orig_packet_end(ecx, edx);
-#else
-#ifdef _DEBUG
-		if (!valve::g_local_player
-			|| valve::g_client_state->m_server_tick != valve::g_client_state->m_delta_tick)
-			return orig_packet_end(ecx, edx);
-#else
-		if (!valve::g_local_player
-			|| valve::g_client_state->m_server_tick != valve::g_client_state->m_delta_tick
-			|| (!g_context->net_info().m_on_local_server && !g_guard->serial_valid))
-			return orig_packet_end(ecx, edx);
-#endif
-#endif
+
 		const auto& local_data = hacks::g_eng_pred->local_data().at(valve::g_client_state->m_cmd_ack % 150);
 		if (local_data.m_spawn_time == valve::g_local_player->spawn_time()
 			&& local_data.m_shift_amount > 0
@@ -1178,38 +1113,6 @@ namespace supremacy::hooks
 			valve::g_local_player->tick_base() = local_data.m_tick_base + 1;
 
 		orig_packet_end(ecx, edx);
-	}
-
-	void __cdecl cl_move(float samples, bool final_tick) {
-		const auto net_channel_info = valve::g_engine->net_channel_info();
-		if (!net_channel_info)
-			return orig_cl_move(samples, final_tick);
-
-		auto& net_info = g_context->net_info();
-
-		const auto update_rate = std::clamp(
-			g_context->cvars().m_cl_updaterate->get_float(),
-			g_context->cvars().m_sv_minupdaterate->get_float(),
-			g_context->cvars().m_sv_maxupdaterate->get_float()
-		);
-
-		const auto lerp_ratio = std::clamp(
-			g_context->cvars().m_cl_interp_ratio->get_float(),
-			g_context->cvars().m_sv_client_min_interp_ratio->get_float(),
-			g_context->cvars().m_sv_client_max_interp_ratio->get_float()
-		);
-
-		net_info.m_lerp = std::clamp(
-			lerp_ratio / update_rate,
-			g_context->cvars().m_cl_interp->get_float(),
-			1.f
-		);
-
-		net_info.m_latency = { net_channel_info->latency(1), net_channel_info->latency(0) };
-		net_info.m_server_tick = valve::g_global_vars->m_tick_count + valve::to_ticks(net_info.m_latency.m_out + net_info.m_latency.m_in);
-		net_info.m_on_local_server = !strcmp(net_channel_info->ip(), xorstr_("loopback"));
-
-		orig_cl_move(samples, final_tick);
 	}
 
 	void __fastcall physics_simulate(valve::c_player* const ecx, const std::uintptr_t edx) {
@@ -1223,8 +1126,8 @@ namespace supremacy::hooks
 			ecx->sim_tick() = valve::g_global_vars->m_tick_count;
 
 			return hacks::g_eng_pred->net_vars().at(user_cmd.m_number % 150).store(user_cmd.m_number);
-		}				
-
+		}
+		
 		if (user_cmd.m_number == (valve::g_client_state->m_cmd_ack + 1))
 			ecx->velocity_modifier() = hacks::g_eng_pred->net_velocity_modifier();
 
@@ -1275,6 +1178,15 @@ namespace supremacy::hooks
 		ecx->sim_time() = backup_sim_time;
 	}
 
+	int process_interpolated_list() {
+		static auto allow_to_extrp = *(bool**)(g_context->addresses().m_allow_extrapolation + 0x1u);
+
+		if (allow_to_extrp)
+			*allow_to_extrp = false;
+
+		return orig_process_interpolated_list();
+	}
+
 	bool __fastcall should_interpolate(valve::c_player* const ecx, const std::uintptr_t edx) {
 		if (ecx != valve::g_local_player
 			|| valve::g_client_state->m_last_cmd_out != hacks::g_exploits->recharge_cmd())
@@ -1318,23 +1230,25 @@ namespace supremacy::hooks
 						from = to;
 					}
 				}
-				else
-					hacks::g_exploits->handle_our_tick_base_shift(ecx, edx, slot, buffer, from, to, move_msg);
+				else 
+					hacks::g_exploits->handle_other_shift(ecx, edx, slot, buffer, from, to, move_msg);
 			}
 
 			return true;
 		}
 
-		const auto v86 = std::min(move_msg->m_new_cmds + hacks::g_exploits->ticks_allowed(), (((*valve::g_game_rules)->is_valve_ds() == true) ? 8 : 16));
+		if (from == -1) {
+			const auto v86 = std::min(move_msg->m_new_cmds + hacks::g_exploits->ticks_allowed(), (((*valve::g_game_rules)->is_valve_ds() == true) ? 8 : 16));
 
-		int v69{};
+			int v69{};
 
-		const auto v70 = v86 - move_msg->m_new_cmds;
-		if (v70 >= 0)
-			v69 = v70;
+			const auto v70 = v86 - move_msg->m_new_cmds;
+			if (v70 >= 0)
+				v69 = v70;
 
-		hacks::g_exploits->ticks_allowed() = v69;
-
+			hacks::g_exploits->ticks_allowed() = v69;
+		}
+	
 		return orig_write_user_cmd_delta_to_buffer(ecx, edx, slot, buffer, from, to, is_new_cmd);
 	}
 
@@ -1349,27 +1263,6 @@ namespace supremacy::hooks
 		hacks::g_eng_pred->net_velocity_modifier() = data->m_value.m_float;
 
 		valve::g_prediction->m_prev_ack_had_errors = true;
-	}
-
-	void __cdecl sequence(valve::recv_proxy_data_t* const data, valve::c_entity* const entity, void* const out) {
-		orig_sequence(data, entity, out);
-	}
-
-	void __cdecl simulation_time(valve::recv_proxy_data_t* const data, valve::c_entity* const entity, void* const out) {
-		if (!entity || !entity->is_player())
-			return orig_simulation_time(data, entity, out);
-
-		int player_tickbase = data->m_value.m_int + valve::g_global_vars->get_network_base(valve::g_global_vars->m_tick_count, entity->index());
-		while (player_tickbase < valve::g_global_vars->m_tick_count - 127)
-			player_tickbase += 256;
-		while (player_tickbase > valve::g_global_vars->m_tick_count + 127)
-			player_tickbase -= 256;
-
-		float sim_time = valve::to_time(player_tickbase);
-		if (sim_time != entity->sim_time()) {
-			entity->on_sim_time_changing(entity->sim_time(), sim_time);
-			entity->sim_time() = sim_time;
-		}
 	}
 
 	void __fastcall modify_eye_pos(valve::anim_state_t* const ecx, const std::uintptr_t edx, vec3_t& eye_pos) {
@@ -1642,92 +1535,44 @@ namespace supremacy::hooks
 		return &hacks::g_eng_pred->local_data().at(g_context->last_sent_cmd_number() % 150).m_user_cmd.m_view_angles;
 	}
 
-	bool __fastcall is_paused(const std::uintptr_t ecx, const std::uintptr_t edx) {
-		if (*reinterpret_cast<std::uintptr_t*>(_AddressOfReturnAddress()) == g_context->addresses().m_ret_to_extrapolation)
-			return true;
-
-		return orig_is_paused(ecx, edx);
-	}
-
-	int __fastcall process_interpolated_list()	{
-		static auto allow_extrapolation = **reinterpret_cast<bool**>(g_context->addresses().m_allow_extrapolation);
-
-		if (allow_extrapolation)
-			allow_extrapolation = false;
-
-		return orig_process_interpolated_list();
-	}
-
-	bool __fastcall is_hltv(const std::uintptr_t ecx, const std::uintptr_t edx) {
-		if (g_context->allow_setup_bones())
-			return true;
-
-		if (g_context->allow_anim_update())
-			return true;
-
-		if (*reinterpret_cast<std::uintptr_t*>(_AddressOfReturnAddress()) == g_context->addresses().m_ret_to_accumulate_layers ||
-			*reinterpret_cast<std::uintptr_t*>(_AddressOfReturnAddress()) == g_context->addresses().m_ret_to_setup_velocity)
-			return true;
-
-		return orig_is_hltv(ecx, edx);
-	}
-
 	float __fastcall aspect_ratio(const std::uintptr_t ecx, const std::uintptr_t edx, int width, int height) {
-#ifndef ALPHA
-#ifndef _DEBUG
-		static auto once = true;
-
-		if (once) {			
-			g_guard->serial_valid = g_guard->is_serial_valid();
-
-			once = false;
-		}
-#endif
-#endif
 		if (!sdk::g_config_system->aspect_ratio)
 			return orig_aspect_ratio(ecx, edx, width, height);
 
 		return orig_aspect_ratio(ecx, edx, sdk::g_config_system->width, sdk::g_config_system->height);
 	}
 
-	bool __fastcall in_prediction() {
-		if (g_context->allow_setup_bones()
-			&& *reinterpret_cast<std::uintptr_t*>(_AddressOfReturnAddress()) == g_context->addresses().m_ret_to_maintain_seq_transitions)
-			return true;
-
-		return orig_in_prediction(valve::g_prediction);
-	}
-
-	bool __fastcall svc_msg_voice_data(std::uintptr_t ecx, std::uintptr_t edx, void* msg) {
+	bool __fastcall svc_msg_voice_data(std::uintptr_t ecx, std::uintptr_t edx, valve::c_svc_msg_voice_data* msg) {
 		if (!msg)
 			return orig_svc_msg_voice_data(ecx, edx, msg);
 
-		auto msg_ptr = (valve::csvc_msg_data_legacy_t*)msg;
-
-		if (msg_ptr->m_client + 1 == valve::g_local_player)
+		if (!valve::g_local_player
+			|| valve::g_engine->local_player_index() == msg->m_client + 1) {
 			return orig_svc_msg_voice_data(ecx, edx, msg);
-		
-		valve::cheat_data_t* ptr = (valve::cheat_data_t*)&msg_ptr->m_xuid_low;
+		}
 
-		if (ptr->m_unique_key == 1469) {
+		auto voice_data = msg->get_data();
+		const auto raw_data = voice_data.raw_data();
+		if (!raw_data)
+			return orig_svc_msg_voice_data(ecx, edx, msg);
+
+		const auto& data = *(valve::shared_esp_data_t*)(raw_data);
+
+		if (data.m_unique_key == std::stoi(xorstr_("1469"))) {
+			const auto index = data.m_player_idx;
+
 			const auto player = static_cast<valve::c_player*>(
-				valve::g_entity_list->find_entity(ptr->m_player_idx)
+				valve::g_entity_list->find_entity(index)
 				);
 
-			if (player 
+			if (player
 				&& player->alive()
-				&& player->dormant())
-			{
-				hacks::g_visuals->m_dormant_data.at(player->index() - 1).m_origin = vec3_t(ptr->m_x, ptr->m_y, ptr->m_z);
-				hacks::g_visuals->m_dormant_data.at(player->index() - 1).m_use_shared = true;
-				player->origin() = vec3_t(ptr->m_x, ptr->m_y, ptr->m_z);
-				player->set_abs_origin(vec3_t(ptr->m_x, ptr->m_y, ptr->m_z));
-				player->health() = ptr->m_player_health;
-				hacks::g_visuals->m_dormant_data.at(player->index() - 1).m_weapon_id = ptr->m_player_weapon_id;
-				hacks::g_visuals->m_dormant_data.at(player->index() - 1).m_weapon_type = ptr->m_player_weapon_type;
-				hacks::g_visuals->m_dormant_data.at(player->index() - 1).m_last_shared_time = valve::g_global_vars->m_real_time;
+				&& player->dormant()) {
+				const vec3_t origin = vec3_t(data.m_x, data.m_y, data.m_z);
+				hacks::g_dormant_esp->m_sound_players[index - 1].m_receive_time = valve::g_global_vars->m_real_time;
+				hacks::g_dormant_esp->m_sound_players[index - 1].m_origin = origin;
 			}
-		}
+		}	
 
 		return orig_svc_msg_voice_data(ecx, edx, msg);
 	}

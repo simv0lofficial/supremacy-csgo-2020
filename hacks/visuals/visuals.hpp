@@ -3,14 +3,10 @@
 namespace supremacy::hacks {
 	struct dormant_data_t {
 		float m_alpha{};
-		bool m_was_unseen{};
 		int m_health{};
-		vec3_t m_origin{};
 		float m_receive_time{};
 		int m_weapon_id{};
 		int m_weapon_type{ -1 };
-		bool m_use_shared{};
-		float m_last_shared_time{};
 	};
 
 	class c_dormant_esp
@@ -144,8 +140,6 @@ namespace supremacy::hacks {
 
 		void oof_arrow(const vec3_t& pos) const;
 
-		void send_net_data(valve::c_player* const player);
-
 		void handle_player(valve::c_player* const player);
 
 		void handle_projectile(valve::c_entity* const entity, const valve::e_class_id class_id);
@@ -234,6 +228,8 @@ namespace supremacy::hacks {
 			valve::c_player* const ecx, const std::uintptr_t edx,
 			vec3_t& origin, qangle_t& angles, float& z_near, float& z_far, float& fov
 		);
+
+		void send_net_data(valve::c_player* const player);
 
 		void add_shot_mdl(valve::c_player* const player, const std::shared_ptr< lag_record_t >& lag_record);
 

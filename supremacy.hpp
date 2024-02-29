@@ -20,6 +20,7 @@
         __forceinline float length_sqr( ) const { return dot( *this ); } \
         __forceinline float length_2d_sqr( ) const { return x * x + y * y; } \
         __forceinline float length( ) const { return std::sqrt( length_sqr( ) ); } \
+        __forceinline bool is_valid( ) const { return std::isfinite( x ) && std::isfinite( y ) && std::isfinite( z ); } \
         __forceinline float length_2d( ) const { return std::sqrt( length_2d_sqr( ) ); } \
         __forceinline float normalize( ) { const auto len = length( ); if ( len ) { x /= len; y /= len; z /= len; } return len; } \
         __forceinline ImVec3 normalized( ) { auto ret = *this; ret.normalize( ); return ret; }
@@ -47,6 +48,7 @@
 #include <tlhelp32.h>
 #include <psapi.h>
 #include <signal.h>
+#pragma comment (lib, "urlmon.lib")
 
 #include <d3d9.h>
 #include <d3dx9.h>
@@ -58,10 +60,8 @@
 
 #include "dependencies/json.hpp"
 
-#include "dependencies/multi_thread/multi_thread.hpp"
-
 #include "dependencies/minhook/minhook.h"
-
+#include "dependencies/bass/API.h"
 #include "dependencies/imgui/imgui.h"
 #include "dependencies/imgui/imgui_freetype.h"
 #include "dependencies/imgui/imgui_internal.h"
@@ -79,7 +79,6 @@ IMGUI_IMPL_API LRESULT  ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPAR
 #include "util/util.hpp"
 #include "dependencies/config_system/config_system.hpp"
 #include "context/context.hpp"
-#include "dependencies/guard/guard.hpp"
 #include "valve/valve.hpp"
 #include "hacks/hacks.hpp"
 

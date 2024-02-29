@@ -160,10 +160,13 @@ namespace supremacy::hacks {
 								new_anim_side = 2;
 								break;
 							case 2:
-								new_anim_side = 1;
+								if (shot.m_target.m_point.m_low_intersections == 3)
+									new_anim_side = 1;
+								else
+									new_anim_side = 3;
 								break;
 							case 3:
-								new_anim_side = shot.m_target.m_point.m_intersections < 2 ? 1 : 2;
+								new_anim_side = 4;
 								break;
 							case 4:
 								new_anim_side = 1;
@@ -442,16 +445,14 @@ namespace supremacy::hacks {
 			g_visuals->next_update() = valve::g_global_vars->m_real_time + 10.f;
 
 			for (std::size_t i{}; i < 64u; ++i) {
-				hacks::g_visuals->m_dormant_data.at(i).m_health = 100;
-				hacks::g_visuals->m_dormant_data.at(i).m_origin = {};
-				hacks::g_visuals->m_dormant_data.at(i).m_receive_time = 0.f;
-				hacks::g_visuals->m_dormant_data.at(i).m_alpha = 0.f;
-				hacks::g_visuals->m_dormant_data.at(i).m_alpha = std::clamp(hacks::g_visuals->m_dormant_data.at(i).m_alpha, 0.f, 255.f);
-				hacks::g_visuals->m_dormant_data.at(i).m_use_shared = false;
-				hacks::g_visuals->m_dormant_data.at(i).m_weapon_id = 0;
-				hacks::g_visuals->m_dormant_data.at(i).m_weapon_type = -1;
-				hacks::g_visuals->m_dormant_data.at(i).m_last_shared_time = 0.f;
-
+				g_visuals->m_dormant_data.at(i).m_health = 100;
+				g_visuals->m_dormant_data.at(i).m_receive_time = 0.f;
+				g_visuals->m_dormant_data.at(i).m_alpha = 0.f;
+				g_visuals->m_dormant_data.at(i).m_weapon_id = 0;
+				g_visuals->m_dormant_data.at(i).m_weapon_type = -1;
+				g_dormant_esp->m_sound_players[i].m_receive_time = 0.f;
+				g_dormant_esp->m_sound_players[i].m_origin = {};
+				
 				auto& entry = g_lag_comp->entry(i);
 
 				entry.m_misses = 0;

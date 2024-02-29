@@ -294,7 +294,7 @@ namespace supremacy::valve {
 		bool	m_old_cl_predict_value{};
 		int		m_prev_start_frame{};
 		int		m_incoming_packet_number{};
-		float	m_last_server_world_time_stamp{};
+		float	m_last_server_world_time_stamp{};		
 		bool	m_first_time_predicted{};
 		char	pad2[3u]{};
 		int		m_cmds_predicted{};

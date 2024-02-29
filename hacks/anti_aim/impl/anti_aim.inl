@@ -25,4 +25,8 @@ namespace supremacy::hacks {
 			&& !(g_context->flags() & e_context_flags::aim_fire)
 			&& !g_context->freeze_time();
 	}
+
+	__forceinline int& c_anti_aim::manual_side() {
+		return m_manual_side;
+	}
 }

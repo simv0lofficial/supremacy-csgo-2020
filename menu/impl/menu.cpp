@@ -38,8 +38,18 @@ namespace supremacy {
 		ImGui_ImplWin32_Init(param.hFocusWindow);
 		ImGui_ImplDX9_Init(pDevice);
 
+		static const ImWchar ranges[] =	{
+			0x0020u, 0x00ffu,
+			0x0400u, 0x052fu,
+			0x2de0u, 0x2dffu,
+			0xa640u, 0xa69fu,
+			0xe000u, 0xe226u,
+			0u,
+		};
+
 		ImFontConfig cfg;
 		cfg.RasterizerFlags = 1 << 7 | 1 << 4; // semi-disable antialiasing
+		cfg.GlyphRanges = ranges;
 
 		io.Fonts->AddFontFromMemoryTTF(main_font, 291576, 12.f, &cfg, get_font_glyph_ranges(io.Fonts));
 		io.Fonts->AddFontFromMemoryTTF(main_font, 291576, 12.f, &cfg, get_font_glyph_ranges(io.Fonts));
@@ -109,7 +119,6 @@ namespace supremacy {
 			ui::SetNextWindowPos(posDouble(0));
 			ui::BeginChild("aimbot", child_size_d);
 			{
-				//ui::SingleSelect("weapon selection", &sdk::g_config_system->weapon_selection, { "pistols", "heavy pistols", "sub-machine guns", "rifles", "auto snipers", "scout", "awp", "shotguns", "machine guns", "taser" });
 				ui::Checkbox("enabled", &sdk::g_config_system->enabled);
 				ui::Keybind("##enabled_key", &sdk::g_config_system->enabled_key, &sdk::g_config_system->enabled_key_style);
 				ui::MultiSelect("target hitbox", &sdk::g_config_system->target_hitbox, { "head", "chest", "body", "arms", "legs", "feet" });
@@ -188,10 +197,10 @@ namespace supremacy {
 					if (sdk::g_config_system->safe_point_conditions[5])
 						ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->max_misses_safe_point, 1, 5, "%d miss");
 				}
-				ui::Checkbox("double tap", &sdk::g_config_system->double_tap);
+
+				// note: simv0l - defensive doubletap was removed in release version (i don't want break 2020 hvh)
+				ui::SingleSelect("double tap", &sdk::g_config_system->double_tap, { "off", "offensive", "defensive" });
 				ui::Keybind("##double_tap_key", &sdk::g_config_system->double_tap_key, &sdk::g_config_system->double_tap_key_style);
-				if (sdk::g_config_system->double_tap)
-					ui::SliderFloat("recharge delay", &sdk::g_config_system->recharge_delay, 0.f, 1.f, "%.2fs");
 			}
 			ui::EndChild();
 		}
@@ -219,6 +228,12 @@ namespace supremacy {
 				}	
 				ui::SingleSelect("freestanding", &sdk::g_config_system->freestanding, { "off", "default", "peek fake", "peek real" });
 				ui::Keybind("##freestanding_key", &sdk::g_config_system->freestanding_key, &sdk::g_config_system->freestanding_key_style);
+				ui::Text("manual left");
+				ui::Keybind("##manual_left_key", &sdk::g_config_system->manual_left_key);
+				ui::Text("manual right");
+				ui::Keybind("##manual_right_key", &sdk::g_config_system->manual_right_key);
+				ui::Text("manual back");
+				ui::Keybind("##manual_back_key", &sdk::g_config_system->manual_back_key);
 			}
 			ui::EndChild();
 
@@ -351,7 +366,11 @@ namespace supremacy {
 				ui::Checkbox("grenade proximity warning", &sdk::g_config_system->grenade_proximity_warning);
 				ui::Checkbox("spectators", &sdk::g_config_system->spectators);
 				ui::Checkbox("penetration reticle", &sdk::g_config_system->penetration_reticle);
-				ui::MultiSelect("feature indicators", &sdk::g_config_system->feature_indicators, { "lag comp", "double tap", "hide shots", "force body aim", "force safe point", "override minimum damage", "peek assistance" });
+				ui::MultiSelect("feature indicators", &sdk::g_config_system->feature_indicators, { "lag comp", "double tap", "hide shots", "force body aim", "force safe point", "override minimum damage", "peek assistance", "manual anti-aimbot angles"});
+				if (sdk::g_config_system->feature_indicators[7]) {
+					ui::Text("manual anti-aimbot angles color");
+					color_picker("##manual_anti_aimbot_angles_color", sdk::g_config_system->manual_anti_aimbot_angles_color);
+				}
 			}
 			ui::EndChild();
 
@@ -394,7 +413,10 @@ namespace supremacy {
 			ui::BeginChild("settings", ImVec2(ui::GetWindowSize().x / 2 - 36 + 4, ui::GetWindowSize().y / 2 - 80 - 27 + 65 + 31 - 30 - 30 - 120 + 24));
 			{
 				ui::Text("menu key");
-				ui::Keybind("##menu_key", &sdk::g_config_system->menu_key);
+				if (ui::Keybind("##menu_key", &sdk::g_config_system->menu_key))
+					if (sdk::g_config_system->menu_key == VK_ESCAPE
+						|| sdk::g_config_system->menu_key < VK_BACK)
+						sdk::g_config_system->menu_key = 0;				
 
 				ui::Text("menu color");
 				if (color_picker("##menu_color", sdk::g_config_system->menu_color, false)) {
@@ -441,7 +463,7 @@ namespace supremacy {
 				ui::Checkbox("clan tag spammer", &sdk::g_config_system->clan_tag_spammer);
 				ui::Checkbox("chat spammer", &sdk::g_config_system->chat_spammer);
 				ui::Checkbox("name spammer", &sdk::g_config_system->name_spammer);
-				ui::Checkbox("share esp (n/w)", &sdk::g_config_system->share_esp);
+				ui::Checkbox("share esp", &sdk::g_config_system->share_esp);
 				ui::Checkbox("log weapon purchases", &sdk::g_config_system->log_weapon_purchases);
 				ui::Checkbox("log damage dealt", &sdk::g_config_system->log_damage_dealt);
 				ui::SingleSelect("persistent kill feed", &sdk::g_config_system->persistent_kill_feed, { "none", "default", "only headshots" });
@@ -459,6 +481,12 @@ namespace supremacy {
 				ui::Checkbox("infinite duck", &sdk::g_config_system->infinite_duck);
 				ui::Text("fake duck");
 				ui::Keybind("##fake_duck_key", &sdk::g_config_system->fake_duck_key, &sdk::g_config_system->fake_duck_key_style);
+				ui::Text("radio");
+				ui::Keybind("##radio_key", &sdk::g_config_system->radio_key, &sdk::g_config_system->radio_key_style);
+				if (sdk::g_config_system->radio_key) {
+					ui::SliderInt("volume", &sdk::g_config_system->volume, 0, 100, "%d%%");
+					ui::SingleSelect("channel", &sdk::g_config_system->channel, { "phonk", "chanson", "podrubasik", "club", "house", "8-bit", "lo-fi", "eurobeat", "news"});
+				}
 			}
 			ui::EndChild();
 		}
@@ -470,16 +498,14 @@ namespace supremacy {
 			ui::SetNextWindowPos(ImVec2(ui::GetWindowPos().x - 4 + 26 + (ui::GetWindowSize().x / 2 - 36) * 1 + 20 * 1, ui::GetWindowPos().y + 52 + 27));
 			ui::BeginChild("scripts", ImVec2(ui::GetWindowSize().x / 2 - 36 + 4, ui::GetWindowSize().y - 80 - 27));
 			{
-				ui::Text("soon...");
+
 			}
 			ui::EndChild();
 		}
 
 		if (this->m_current_tab == 5)
 		{
-			//skins::get().menu();
 
-			//ui::EndChild();
 		}
 
 		ui::End();

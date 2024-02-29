@@ -65,15 +65,6 @@ namespace supremacy::valve {
 			)(this, obb_min, obb_max);
 	}
 
-	__forceinline void c_entity::on_sim_time_changing(float previous_simtime, float next_simtime)
-	{
-		using fn_t = void(__thiscall*)(decltype(this), float, float);
-
-		return reinterpret_cast<fn_t>(
-			g_context->addresses().m_on_sim_time_changing
-			)(this, previous_simtime, next_simtime);
-	}
-
 	__forceinline float& c_entity::old_sim_time( ) {
 		static const auto& net_var = g_net_vars->entry( xorstr_( "CBaseEntity->m_flSimulationTime" ) );
 
@@ -775,6 +766,14 @@ namespace supremacy::valve {
 		);
 	}
 
+	__forceinline int& c_player::final_predicted_tick() {
+		static const auto& net_var = g_net_vars->entry(xorstr_("CBasePlayer->m_nTickBase"));
+
+		return *reinterpret_cast<int*>(
+			reinterpret_cast<std::uintptr_t>(this) + std::get< std::uint32_t >(net_var) + 0x4u
+		);
+	}
+
 	__forceinline bool& c_player::client_side_anim( ) {
 		static const auto& net_var = g_net_vars->entry( xorstr_( "CCSPlayer->m_bClientSideAnimation" ) );
 
@@ -992,6 +991,14 @@ namespace supremacy::valve {
 		);
 	}
 
+	__forceinline float& c_player::fall_velocity() {
+		static const auto& net_var = g_net_vars->entry(xorstr_("CBasePlayer->m_flFallVelocity"));
+
+		return *reinterpret_cast<float*>(
+			reinterpret_cast<std::uintptr_t>(this) + std::get< std::uint32_t >(net_var)
+			);
+	}
+
 	__forceinline user_cmd_t*& c_player::cur_user_cmd( ) {
 		return *reinterpret_cast< user_cmd_t** >(
 			reinterpret_cast< std::uintptr_t >( this ) + 0x3338u
@@ -1158,7 +1165,7 @@ namespace supremacy::valve {
 			);
 	}
 
-	__forceinline void c_player::invalidate_physics_recursive(int bits)	{
+	__forceinline void c_player::invalidate_physics_recursive(int bits) {
 		using fn_t = void(__thiscall*)(void*, int);
 
 		reinterpret_cast<fn_t>(

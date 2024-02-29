@@ -74,7 +74,6 @@ namespace sdk {
 		g_config_system->push_item(&g_config_system->double_tap, "other", "double_tap", g_config_system->double_tap);
 		g_config_system->push_item(&g_config_system->double_tap_key, "other", "double_tap_key", g_config_system->double_tap_key);
 		g_config_system->push_item(&g_config_system->double_tap_key_style, "other", "double_tap_key_style", g_config_system->double_tap_key_style);
-		g_config_system->push_item(&g_config_system->recharge_delay, "other", "recharge_delay", g_config_system->recharge_delay);
 
 		// anti-aimbot angles.
 		g_config_system->push_item(&g_config_system->enabled2, "anti-aimbot angles", "enabled", g_config_system->enabled2);
@@ -95,6 +94,9 @@ namespace sdk {
 		g_config_system->push_item(&g_config_system->freestanding, "anti-aimbot angles", "freestanding", g_config_system->freestanding);
 		g_config_system->push_item(&g_config_system->freestanding_key, "anti-aimbot angles", "freestanding_key", g_config_system->freestanding_key);
 		g_config_system->push_item(&g_config_system->freestanding_key_style, "anti-aimbot angles", "freestanding_key_style", g_config_system->freestanding_key_style);
+		g_config_system->push_item(&g_config_system->manual_left_key, "anti-aimbot angles", "manual_left_key", g_config_system->manual_left_key);
+		g_config_system->push_item(&g_config_system->manual_right_key, "anti-aimbot angles", "manual_right_key", g_config_system->manual_right_key);
+		g_config_system->push_item(&g_config_system->manual_back_key, "anti-aimbot angles", "manual_back_key", g_config_system->manual_back_key);
 
 		// other.
 		g_config_system->push_item(&g_config_system->fake_lag, "other", "fake_lag", g_config_system->fake_lag);
@@ -269,6 +271,7 @@ namespace sdk {
 		g_config_system->push_item(&g_config_system->feature_indicators[4], "other esp", "feature_indicators_4", g_config_system->feature_indicators[4]);
 		g_config_system->push_item(&g_config_system->feature_indicators[5], "other esp", "feature_indicators_5", g_config_system->feature_indicators[5]);
 		g_config_system->push_item(&g_config_system->feature_indicators[6], "other esp", "feature_indicators_6", g_config_system->feature_indicators[6]);
+		g_config_system->push_item(&g_config_system->feature_indicators[7], "other esp", "feature_indicators_7", g_config_system->feature_indicators[7]);
 
 		// effects.
 		g_config_system->push_item(&g_config_system->remove_flashbang_effects, "effects", "remove_flashbang_effects", g_config_system->remove_flashbang_effects);
@@ -378,6 +381,10 @@ namespace sdk {
 		g_config_system->push_item(&g_config_system->infinite_duck, "extra", "infinite_duck", g_config_system->infinite_duck);
 		g_config_system->push_item(&g_config_system->fake_duck_key, "extra", "fake_duck_key", g_config_system->fake_duck_key);
 		g_config_system->push_item(&g_config_system->fake_duck_key_style, "extra", "fake_duck_key_style", g_config_system->fake_duck_key_style);
+		g_config_system->push_item(&g_config_system->radio_key, "extra", "radio_key", g_config_system->radio_key);
+		g_config_system->push_item(&g_config_system->radio_key_style, "extra", "radio_key_style", g_config_system->radio_key_style);
+		g_config_system->push_item(&g_config_system->volume, "extra", "volume", g_config_system->volume);
+		g_config_system->push_item(&g_config_system->channel, "extra", "channel", g_config_system->channel);
 	}
 
 	inline bool file_exists(const std::string& name) {

@@ -93,6 +93,12 @@ namespace supremacy::valve {
 		return (*reinterpret_cast<fn_t**>(this))[1u](this);
 	}
 
+	__forceinline bool net_channel_info_t::loopback() {
+		using fn_t = bool(__thiscall*)(decltype(this));
+
+		return (*reinterpret_cast<fn_t**>(this))[6u](this);
+	}
+
 	__forceinline float net_channel_info_t::latency( const int flow ) {
 		using fn_t = float( __thiscall* )( decltype( this ), const int );
 
@@ -116,16 +122,16 @@ namespace supremacy::valve {
 		return m_fraction < 1.f || m_all_solid || m_start_solid;
 	}
 
-	__forceinline void net_channel_t::send_datagram( const std::uintptr_t data ) {
-		using fn_t = void( __thiscall* )( decltype( this ), const std::uintptr_t );
+	__forceinline void net_channel_t::send_datagram( const uintptr_t data ) {
+		using fn_t = void( __thiscall* )( decltype( this ), const uintptr_t );
 
 		return ( *reinterpret_cast< fn_t** >( this ) )[ 46u ]( this, data );
 	}
 
-	__forceinline bool net_channel_t::send_net_msg(void* msg, bool force_reliable, bool voice) {
-		using fn_t = bool(__thiscall*)(decltype(this), void*, bool, bool);
+	__forceinline void net_channel_t::send_net_msg(const uintptr_t msg, bool force_reliable, bool voice) {
+		using fn_t = void(__thiscall*)(decltype(this), const uintptr_t, bool, bool);
 
-		return (*reinterpret_cast<fn_t**>(this))[42u](this, msg, force_reliable, voice);
+		return (*reinterpret_cast<fn_t**>(this))[40u](this, msg, force_reliable, voice);
 	}
 
 	__forceinline std::uint32_t user_cmd_t::calc_checksum( ) {

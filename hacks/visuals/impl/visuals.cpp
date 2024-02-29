@@ -28,8 +28,6 @@ namespace supremacy::hacks {
 				continue;
 
 			setup_adjust(player, sound);
-
-			g_visuals->m_dormant_data.at(sound.m_sound_source - 1).m_alpha = 190.f;
 		}
 
 		m_sound_buffer = m_cur_sound_list;
@@ -55,7 +53,6 @@ namespace supremacy::hacks {
 		m_sound_players[sound.m_sound_source - 1].m_flags = player->flags();
 		m_sound_players[sound.m_sound_source - 1].m_flags |= (tr.m_fraction < 0.5f ? valve::e_ent_flags::ducking : valve::e_ent_flags::none) | (tr.m_fraction < 1.f ? valve::e_ent_flags::on_ground : valve::e_ent_flags::none);
 		m_sound_players[sound.m_sound_source - 1].m_flags &= (tr.m_fraction >= 0.5f ? ~valve::e_ent_flags::ducking : valve::e_ent_flags::none) | (tr.m_fraction >= 1.f ? ~valve::e_ent_flags::on_ground : valve::e_ent_flags::none);
-
 		m_sound_players[sound.m_sound_source - 1].m_receive_time = valve::g_global_vars->m_real_time;
 		m_sound_players[sound.m_sound_source - 1].m_origin = *sound.m_origin;
 	}
@@ -66,7 +63,9 @@ namespace supremacy::hacks {
 
 		auto expired = false;
 
-		if (fabs(valve::g_global_vars->m_real_time - sound_player.m_receive_time) > 10.f)
+		if (fabs(valve::g_global_vars->m_real_time - sound_player.m_receive_time) < 1.f)
+			g_visuals->m_dormant_data.at(i - 1).m_alpha = 160.f;
+		else if (fabs(valve::g_global_vars->m_real_time - sound_player.m_receive_time) > 9.f)
 			expired = true;
 
 		entity->flags() = sound_player.m_flags;
@@ -516,8 +515,8 @@ namespace supremacy::hacks {
 
 		const auto max_unlag = g_context->cvars().m_sv_maxunlag->get_float();
 
-		const auto nci = valve::g_engine->net_channel_info();
-		const auto total_latency = std::clamp(nci->avg_latency(0) + nci->avg_latency(1), 0.f, max_unlag);
+		const auto net_channel_info = valve::g_engine->net_channel_info();
+		const auto total_latency = std::clamp(net_channel_info->avg_latency(0) + net_channel_info->avg_latency(1), 0.f, max_unlag);
 		const auto correct = total_latency + g_context->net_info().m_lerp;
 
 		const auto end = entry.m_lag_records.end();
@@ -546,7 +545,7 @@ namespace supremacy::hacks {
 					std::lerp(next_origin.z, current->m_origin.z, lerp_amt)
 				};
 
-				const auto& anim_side = current->m_side < 3 ? current->m_sides.at(current->m_side) : current->m_sides_low.at(current->m_side - 3);
+				const auto& anim_side = current->m_side < 3 ? current->m_sides.at(current->m_side) : current->m_low_sides.at(current->m_side - 3);
 
 				auto lerped_bones = anim_side.m_bones;
 
@@ -1038,10 +1037,10 @@ namespace supremacy::hacks {
 
 		// todo: simv0l - draw oof arrows for dormant players.
 		add_vertices(vertices.data(), vertices.size(),
-			static_cast<std::uint8_t>(sdk::g_config_system->out_of_fow_arrow_color[0] * 255.f)
-			| (static_cast<std::uint8_t>(sdk::g_config_system->out_of_fow_arrow_color[1] * 255.f) << 8u)
-			| (static_cast<std::uint8_t>(sdk::g_config_system->out_of_fow_arrow_color[2] * 255.f) << 16u)
-			| (static_cast<std::uint8_t>(sdk::g_config_system->out_of_fow_arrow_color[3] * 255.f) << 24u)
+			static_cast<uint8_t>(sdk::g_config_system->out_of_fow_arrow_color[0] * 255.f)
+			| (static_cast<uint8_t>(sdk::g_config_system->out_of_fow_arrow_color[1] * 255.f) << 8u)
+			| (static_cast<uint8_t>(sdk::g_config_system->out_of_fow_arrow_color[2] * 255.f) << 16u)
+			| (static_cast<uint8_t>(sdk::g_config_system->out_of_fow_arrow_color[3] * 255.f) << 24u)
 		);
 	}
 
@@ -1049,41 +1048,43 @@ namespace supremacy::hacks {
 		if (!sdk::g_config_system->share_esp)
 			return;
 
-		valve::cclc_msg_data_legacy_t client_msg{};
+		valve::shared_esp_data_t data{};		
+		data.m_player_idx = static_cast <int16_t> (player->index());
+		data.m_unique_key = static_cast <int16_t> (std::stoi(xorstr_("1469")));
 
-		memset(&client_msg, 0, sizeof(client_msg));
+		const vec3_t origin = player->origin();
+		data.m_x = static_cast <int16_t> (origin.x);
+		data.m_y = static_cast <int16_t> (origin.y);
+		data.m_z = static_cast <int16_t> (origin.z);
 
-		const auto func = (std::uint32_t(__fastcall*)(void*, void*))g_context->addresses().m_voice_msg_ctor;
+		std::vector<uint8_t> voice{};
+		voice.resize(sizeof(data));
+		memcpy(voice.data(), &data, sizeof(data));
 
-		func((void*)&client_msg, nullptr);
+		valve::c_voice_communication_data new_data{};
+		memcpy(new_data.raw_data(), voice.data(), voice.size());
 
-		valve::cheat_data_t* ptr = (valve::cheat_data_t*)&client_msg.m_xuid_low;
+		valve::clc_msg_voice_data_t msg;
+		memset(&msg, 0, sizeof(msg));
 
-		ptr->m_unique_key = 1469;
-		ptr->m_player_idx = static_cast <std::uint8_t> (player->index());
-		ptr->m_x = static_cast <std::int16_t> (player->origin().x);
-		ptr->m_y = static_cast <std::int16_t> (player->origin().y);
-		ptr->m_z = static_cast <std::int16_t> (player->origin().z);
-		ptr->m_player_health = static_cast <std::uint8_t> (player->health());
-		if (player->weapon()) {
-			ptr->m_player_weapon_id = static_cast <std::uint8_t> (player->weapon()->item_index());
+		reinterpret_cast<uint32_t(__fastcall*)(void*, void*)>(g_context->addresses().m_construct_voice_data_message)(&msg, nullptr);
+		msg.set_data(&new_data);
 
-			if (player->weapon()->wpn_data())
-				ptr->m_player_weapon_type = static_cast <std::uint8_t> (player->weapon()->wpn_data()->m_type);
-		}
+		valve::communication_string_t comm_str{};
+		msg.m_data = (uintptr_t)&comm_str;
+		msg.m_format = 0;
+		msg.m_flags = 63;
 
-		client_msg.m_flags = 63;
-		client_msg.m_format = 0;
-
-		valve::g_client_state->m_net_channel->send_net_msg(&client_msg);
+		valve::g_client_state->m_net_channel->send_net_msg((uintptr_t)&msg, false, true);
 	}
 
 	void c_visuals::handle_player(valve::c_player* const player) {	
+		const auto index = player->index();
+
 		if (player == valve::g_local_player
 			|| (player->friendly() && !sdk::g_config_system->teammates))
 			return;
 
-		const auto index = player->index();
 		const auto dormant = player->dormant();
 		bool alive_check{};
 
@@ -1113,22 +1114,8 @@ namespace supremacy::hacks {
 				if (!sdk::g_config_system->dormant)
 					return;
 
-				if (!m_dormant_data.at(index - 1).m_use_shared
-					&& valve::g_global_vars->m_real_time - m_dormant_data.at(index - 1).m_last_shared_time > 4.f)
-					g_dormant_esp->adjust_sound(player);
-
-				if (!m_dormant_data.at(index - 1).m_use_shared
-					&& valve::g_global_vars->m_real_time - m_dormant_data.at(index - 1).m_last_shared_time > 4.f) {
-					if (m_dormant_data.at(index - 1).m_alpha < 160.f) {
-						m_dormant_data.at(index - 1).m_alpha -= 255.f / 16.f * valve::g_global_vars->m_frame_time;
-						m_dormant_data.at(index - 1).m_alpha = std::clamp(m_dormant_data.at(index - 1).m_alpha, 0.f, 160.f);
-					}
-					else
-						m_dormant_data.at(index - 1).m_alpha -= 255.f / 1.f * valve::g_global_vars->m_frame_time;
-				}
-				else
-					m_dormant_data.at(index - 1).m_alpha = 190.f;
-
+				g_dormant_esp->adjust_sound(player);
+			
 				if (player->weapon()) {
 					if (m_dormant_data.at(index - 1).m_weapon_id > 0)
 						player->weapon()->item_index() = static_cast <valve::e_item_index> (m_dormant_data.at(index - 1).m_weapon_id);
@@ -1137,20 +1124,24 @@ namespace supremacy::hacks {
 						&& m_dormant_data.at(index - 1).m_weapon_type > -1)
 							player->weapon()->wpn_data()->m_type = m_dormant_data.at(index - 1).m_weapon_type;
 				}
+
+				if (m_dormant_data.at(index - 1).m_alpha < 160.f) {
+					m_dormant_data.at(index - 1).m_alpha -= 255.f / 16.f * valve::g_global_vars->m_frame_time;
+					m_dormant_data.at(index - 1).m_alpha = std::clamp(m_dormant_data.at(index - 1).m_alpha, 0.f, 160.f);
+				}
+				else
+					m_dormant_data.at(index - 1).m_alpha -= 255.f / 1.f * valve::g_global_vars->m_frame_time;
 			}
 			else {
 				g_dormant_esp->m_sound_players[index - 1].m_receive_time = valve::g_global_vars->m_real_time;
 				g_dormant_esp->m_sound_players[index - 1].m_origin = player->abs_origin();
 				g_dormant_esp->m_sound_players[index - 1].m_flags = player->flags();
 
-				m_dormant_data.at(index - 1).m_origin = {};
 				m_dormant_data.at(index - 1).m_receive_time = 0.f;
 				m_dormant_data.at(index - 1).m_alpha += 255.f / 0.68f * valve::g_global_vars->m_frame_time;
 				m_dormant_data.at(index - 1).m_alpha = std::clamp(m_dormant_data.at(index - 1).m_alpha, 0.f, 255.f);
 				m_dormant_data.at(index - 1).m_weapon_id = 0;
 				m_dormant_data.at(index - 1).m_weapon_type = -1;
-				m_dormant_data.at(index - 1).m_use_shared = false;
-				m_dormant_data.at(index - 1).m_last_shared_time = 0.f;
 			}
 		}
 
@@ -1229,7 +1220,7 @@ namespace supremacy::hacks {
 		}
 
 		if (sdk::g_config_system->name) {
-			const auto player_info = valve::g_engine->player_info(player->index());
+			const auto player_info = valve::g_engine->player_info(index);
 			if (player_info.has_value()) {
 				std::string name{ std::string(player_info.value().m_name) };
 
@@ -1753,7 +1744,7 @@ namespace supremacy::hacks {
 
 		if (!valve::g_engine->in_game())
 			return;
-		
+
 		const auto& screen_size = ui::GetIO().DisplaySize;
 		const auto screen_center = screen_size / 2.f;
 
@@ -1937,6 +1928,378 @@ namespace supremacy::hacks {
 
 				indicators.push_back(ind);
 			}
+
+			if (sdk::g_config_system->feature_indicators[7]){
+				const auto x = screen_size.x / 2;
+				const auto y = screen_size.y / 2;
+
+				if (g_anti_aim->manual_side() == 1) {
+					add_rect_filled({ x - 50, y - 7 }, { 1, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 50, y + 7 }, { 1, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 51, y - 7 }, { 1, 3 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 51, y + 5 }, { 1, 3 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 52, y - 6 }, { 1, 4 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 52, y + 3 }, { 1, 4 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 53, y - 6 }, { 1, 5 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 53, y + 2 }, { 1, 5 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 54, y - 5 }, { 1, 5 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 54, y + 1 }, { 1, 5 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 55, y - 5 }, { 1, 11 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 56, y - 4 }, { 1, 9 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 57, y - 4 }, { 1, 9 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 58, y - 3 }, { 1, 7 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 59, y - 3 }, { 1, 7 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 60, y - 2 }, { 1, 5 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 61, y - 2 }, { 1, 5 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 62, y - 1 }, { 1, 3 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 63, y - 1 }, { 1, 3 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 64, y }, { 1, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+				}
+				else if (g_anti_aim->manual_side() == 2) {
+					add_rect_filled({ x + 50, y - 7 }, { 1, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x + 50, y + 7 }, { 1, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x + 51, y - 7 }, { 1, 3 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x + 51, y + 5 }, { 1, 3 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x + 52, y - 6 }, { 1, 4 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x + 52, y + 3 }, { 1, 4 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x + 53, y - 6 }, { 1, 5 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x + 53, y + 2 }, { 1, 5 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x + 54, y - 5 }, { 1, 5 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x + 54, y + 1 }, { 1, 5 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x + 55, y - 5 }, { 1, 11 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x + 56, y - 4 }, { 1, 9 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x + 57, y - 4 }, { 1, 9 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x + 58, y - 3 }, { 1, 7 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x + 59, y - 3 }, { 1, 7 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x + 60, y - 2 }, { 1, 5 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x + 61, y - 2 }, { 1, 5 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x + 62, y - 1 }, { 1, 3 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x + 63, y - 1 }, { 1, 3 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x + 64, y }, { 1, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+				}
+				else if (g_anti_aim->manual_side() == 3) {
+					add_rect_filled({ x , y + 60 }, { 1, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 1 , y + 59 }, { 3, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 1 , y + 58 }, { 3, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 2 , y + 57 }, { 5, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 2 , y + 56 }, { 5, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 3 , y + 55 }, { 7, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 3 , y + 54 }, { 7, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 4 , y + 53 }, { 9, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 4 , y + 52 }, { 9, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 5 , y + 51 }, { 11, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 5 , y + 50 }, { 5, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 6 , y + 49 }, { 5, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 6 , y + 48 }, { 4, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 7 , y + 47 }, { 3, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x - 7 , y + 46 }, { 1, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x + 1 , y + 50 }, { 5, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x + 2 , y + 49 }, { 5, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x + 3 , y + 48 }, { 4, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x + 5 , y + 47 }, { 3, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+					add_rect_filled({ x + 7 , y + 46 }, { 1, 1 },
+						static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[0] * 255.f)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[1] * 255.f) << 8u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[2] * 255.f) << 16u)
+						| (static_cast<std::uint8_t>(sdk::g_config_system->manual_anti_aimbot_angles_color[3] * 255.f) << 24u)
+					);
+				}
+			}
 		}
 
 		if (planted_bomb
@@ -1954,7 +2317,8 @@ namespace supremacy::hacks {
 			if (!valve::g_local_player->alive()) {
 				const auto target = static_cast<valve::c_player*>(valve::g_entity_list->find_entity(valve::g_local_player->observer_target()));
 
-				if (target->index() >= 1
+				if (target
+					&& target->index() >= 1
 					&& target->index() <= 64)
 				{
 					dist = (planted_bomb->origin() - target->origin()).length();
@@ -2062,19 +2426,6 @@ namespace supremacy::hacks {
 	void c_visuals::on_render_start() {
 		if (!valve::g_engine->in_game())
 			return;
-
-		for (int i{ 1 }; i <= valve::g_global_vars->m_max_clients; ++i) {
-			const auto player = static_cast<valve::c_player*>(
-				valve::g_entity_list->find_entity(i)
-				);
-
-			if (!player ||
-				!player->alive()
-				|| player->dormant())
-				continue;
-
-			send_net_data(player);
-		}
 
 		auto& smoke_count = **reinterpret_cast<int**>(g_context->addresses().m_smoke_count);
 
@@ -2195,161 +2546,7 @@ namespace supremacy::hacks {
 			const auto tag_c_str = tag.c_str();
 			g_context->addresses().m_set_clan_tag(tag_c_str, tag_c_str);
 			};
-#if 0
-		static auto was_on = false;
 
-		if (!sdk::g_config_system->clan_tag_spammer) {
-			if (was_on)
-				set_clan_tag("");
-
-			was_on = false;
-		}
-		else {
-			was_on = true;
-
-			static auto old_string = std::string();
-
-			const auto& net_info = g_context->net_info();
-			const auto ticks = valve::to_ticks(valve::to_time(valve::to_ticks(valve::g_engine->last_time_stamp()) + 163) + net_info.m_latency.m_out);
-			const auto offset = (ticks / 20) % 40;
-
-			auto current_string = std::string();
-
-			if (offset < 10) {
-				switch (offset) {
-				case 0:
-					current_string = xorstr_("");
-					break;
-				case 1:
-					current_string = xorstr_("|");
-					break;
-				case 2:
-					current_string = xorstr_("f|");
-					break;
-				case 3:
-					current_string = xorstr_("fa|");
-					break;
-				case 4:
-					current_string = xorstr_("fat|");
-					break;
-				case 5:
-					current_string = xorstr_("fata|");
-					break;
-				case 6:
-					current_string = xorstr_("fatal|");
-					break;
-				case 7:
-					current_string = xorstr_("fatali|");
-					break;
-				case 8:
-					current_string = xorstr_("fatalit|");
-					break;
-				case 9:
-					current_string = xorstr_("fatality|");
-					break;
-				}
-			}
-			else if (offset < 20) {
-				switch (offset - 10) {
-				case 0:
-					current_string = xorstr_("fatality|");
-					break;
-				case 1:
-					current_string = xorstr_("fatality");
-					break;
-				case 2:
-					current_string = xorstr_("fatality");
-					break;
-				case 3:
-					current_string = xorstr_("fatality|");
-					break;
-				case 4:
-					current_string = xorstr_("fatality|");
-					break;
-				case 5:
-					current_string = xorstr_("fatality");
-					break;
-				case 6:
-					current_string = xorstr_("fatality");
-					break;
-				case 7:
-					current_string = xorstr_("fatality|");
-					break;
-				case 8:
-					current_string = xorstr_("fatality|");
-					break;
-				case 9:
-					current_string = xorstr_("fatality");
-					break;
-				}
-			}
-			else if (offset < 30) {
-				switch (offset - 20) {
-				case 0:
-					current_string = xorstr_("fatalit|");
-					break;
-				case 1:
-					current_string = xorstr_("fatali|");
-					break;
-				case 2:
-					current_string = xorstr_("fatal|");
-					break;
-				case 3:
-					current_string = xorstr_("fata|");
-					break;
-				case 4:
-					current_string = xorstr_("fat|");
-					break;
-				case 5:
-					current_string = xorstr_("fa|");
-					break;
-				case 6:
-					current_string = xorstr_("f|");
-					break;
-				case 7:
-					current_string = xorstr_("|");
-					break;
-				case 8:
-					current_string = xorstr_("|");
-					break;
-				}
-			}
-			else switch (offset - 30) {
-			case 0:
-				current_string = xorstr_("\4\4\4");
-				break;
-			case 1:
-				current_string = xorstr_("");
-				break;
-			case 2:
-				current_string = xorstr_("|");
-				break;
-			case 3:
-				current_string = xorstr_("|");
-				break;
-			case 4:
-				current_string = xorstr_("");
-				break;
-			case 5:
-				current_string = xorstr_("");
-				break;
-			case 6:
-				current_string = xorstr_("|");
-				break;
-			case 7:
-				current_string = xorstr_("|");
-				break;
-			case 8:
-				current_string = xorstr_("");
-				break;
-			}
-
-			if (old_string != current_string)
-				set_clan_tag(current_string.c_str());
-
-			old_string = current_string;
-		}
-#else
 		static bool reset = false;
 		static float last_change_time = 0.f;
 		static bool reset_tag = true;
@@ -2380,11 +2577,9 @@ namespace supremacy::hacks {
 
 				if (prev_array_stage != new_array_stage) {
 					char tag[40] = { 0 };
-					strcpy(tag, xorstr_("             supremacy                "));
-
+					strcpy(tag, xorstr_("             supremacy.su             "));
 					char* current_tag = &tag[new_array_stage];
 					current_tag[15] = '\0';
-
 					set_clan_tag(current_tag);
 					prev_array_stage = new_array_stage;
 				}
@@ -2400,7 +2595,6 @@ namespace supremacy::hacks {
 				last_clantag_time = clantag_time;
 			}
 		}
-#endif
 	}
 
 	void c_visuals::on_pre_create_move(const valve::user_cmd_t& cmd) {
@@ -2937,7 +3131,7 @@ namespace supremacy::hacks {
 		shot_mdl.m_state.m_studio_hw_data = valve::g_mdl_cache->lookup_hw_data(model->m_studio);
 		shot_mdl.m_state.m_renderable = player->renderable();
 
-		const auto& anim_side = lag_record->m_side < 3 ? lag_record->m_sides.at(lag_record->m_side) : lag_record->m_sides_low.at(lag_record->m_side - 3);
+		const auto& anim_side = lag_record->m_side < 3 ? lag_record->m_sides.at(lag_record->m_side) : lag_record->m_low_sides.at(lag_record->m_side - 3);
 
 		shot_mdl.m_info.m_model = model;
 		shot_mdl.m_info.m_hitbox_set = player->hitbox_set_index();

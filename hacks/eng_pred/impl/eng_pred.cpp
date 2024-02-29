@@ -2,19 +2,20 @@
 
 namespace supremacy::hacks {
 	void c_eng_pred::prepare() {
-		if (valve::g_client_state->m_delta_tick > 0)
+		if (m_last_frame_stage == valve::e_frame_stage::net_update_end) {
 			valve::g_prediction->update(
 				valve::g_client_state->m_delta_tick,
-				true,
+				valve::g_client_state->m_delta_tick > 0,
 				valve::g_client_state->m_last_cmd_ack,
 				valve::g_client_state->m_last_cmd_out + valve::g_client_state->m_choked_cmds
 			);
-	
-		if (const auto weapon = valve::g_local_player->weapon())
-			if (weapon->item_index() == valve::e_item_index::revolver
-				&& weapon->postpone_fire_ready_time() == std::numeric_limits< float >::max())
-				weapon->postpone_fire_ready_time() = m_postpone_fire_ready_time;
-	
+
+			if (const auto weapon = valve::g_local_player->weapon())
+				if (weapon->item_index() == valve::e_item_index::revolver
+					&& weapon->postpone_fire_ready_time() == std::numeric_limits< float >::max())
+					weapon->postpone_fire_ready_time() = m_postpone_fire_ready_time;
+		}
+
 		m_backup.m_cur_time = valve::g_global_vars->m_cur_time;
 		m_backup.m_frame_time = valve::g_global_vars->m_frame_time;
 
@@ -35,8 +36,8 @@ namespace supremacy::hacks {
 		valve::g_local_player->cur_user_cmd() = user_cmd;
 		valve::g_local_player->last_user_cmd() = *user_cmd;
 
-		m_backup.m_in_prediction = valve::g_prediction->m_in_prediction;
-		m_backup.m_first_time_predicted = valve::g_prediction->m_first_time_predicted;
+		const auto backup_in_prediction = valve::g_prediction->m_in_prediction;
+		const auto backup_first_time_predicted = valve::g_prediction->m_first_time_predicted;
 
 		valve::g_prediction->m_in_prediction = true;
 		valve::g_prediction->m_first_time_predicted = false;
@@ -45,7 +46,7 @@ namespace supremacy::hacks {
 
 		valve::g_movement->start_track_prediction_errors(valve::g_local_player);
 
-		m_backup.m_velocity_modifier = valve::g_local_player->velocity_modifier();
+		const auto backup_velocity_modifier = valve::g_local_player->velocity_modifier();
 
 		valve::g_prediction->setup_move(valve::g_local_player, user_cmd, valve::g_move_helper, &m_move_data);
 
@@ -64,10 +65,9 @@ namespace supremacy::hacks {
 			m_spread = weapon->spread();
 
 			const auto item_index = weapon->item_index();
-			const auto v11 = item_index == valve::e_item_index::awp
-				|| item_index == valve::e_item_index::g3sg1
-				|| item_index == valve::e_item_index::scar20
-				|| item_index == valve::e_item_index::ssg08;
+			const auto v11 =
+				item_index == valve::e_item_index::awp || item_index == valve::e_item_index::g3sg1
+				|| item_index == valve::e_item_index::scar20 || item_index == valve::e_item_index::ssg08;
 			const auto wpn_data = weapon->wpn_data();
 
 			if (valve::g_local_player->flags() & valve::e_ent_flags::ducking)
@@ -80,10 +80,10 @@ namespace supremacy::hacks {
 
 		m_local_data.at(user_cmd->m_number % 150).save(user_cmd->m_number);
 
-		valve::g_local_player->velocity_modifier() = m_backup.m_velocity_modifier;
+		valve::g_local_player->velocity_modifier() = backup_velocity_modifier;
 
-		valve::g_prediction->m_in_prediction = m_backup.m_in_prediction;
-		valve::g_prediction->m_first_time_predicted = m_backup.m_first_time_predicted;
+		valve::g_prediction->m_in_prediction = backup_in_prediction;
+		valve::g_prediction->m_first_time_predicted = backup_first_time_predicted;
 
 		update_shoot_pos();
 	}
@@ -110,7 +110,7 @@ namespace supremacy::hacks {
 
 		if (anim_state->m_player
 			&& (anim_state->m_landing || anim_state->m_duck_amount || anim_state->m_player->ground_entity() == valve::e_ent_handle::invalid)) {
-			const auto bone_index = valve::g_local_player->lookup_bone(xorstr_("head_0"));
+			const auto bone_index = valve::g_local_player->lookup_bone("head_0");
 			if (bone_index != -1) {
 				vec3_t head_pos{
 					bones[bone_index][0u][3u],

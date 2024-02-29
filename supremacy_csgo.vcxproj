@@ -161,8 +161,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="context\impl\context.cpp" />
+    <ClCompile Include="dependencies\bass\dll.cpp" />
+    <ClCompile Include="dependencies\bass\dll_image.cpp" />
     <ClCompile Include="dependencies\config_system\impl\config_system.cpp" />
-    <ClCompile Include="dependencies\guard\guard.cpp" />
     <ClCompile Include="dependencies\imgui\clip.cpp" />
     <ClCompile Include="dependencies\imgui\imgui.cpp" />
     <ClCompile Include="dependencies\imgui\imgui_demo.cpp" />
@@ -176,12 +177,6 @@
     <ClCompile Include="dependencies\minhook\hde\hde32.c" />
     <ClCompile Include="dependencies\minhook\hook.c" />
     <ClCompile Include="dependencies\minhook\trampoline.c" />
-    <ClCompile Include="dependencies\multi_thread\atomic_lock.cpp" />
-    <ClCompile Include="dependencies\multi_thread\multi_thread.cpp" />
-    <ClCompile Include="dependencies\multi_thread\mutex.cpp" />
-    <ClCompile Include="dependencies\multi_thread\packed_heap.cpp" />
-    <ClCompile Include="dependencies\multi_thread\semaphores.cpp" />
-    <ClCompile Include="dependencies\multi_thread\shared_mutex.cpp" />
     <ClCompile Include="hacks\aim_bot\impl\aim_bot.cpp" />
     <ClCompile Include="hacks\anim_sync\impl\anim_sync.cpp" />
     <ClCompile Include="hacks\anti_aim\impl\anti_aim.cpp" />
@@ -200,8 +195,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="context\context.hpp" />
+    <ClInclude Include="dependencies\bass\API.h" />
+    <ClInclude Include="dependencies\bass\bass.h" />
+    <ClInclude Include="dependencies\bass\dll.h" />
+    <ClInclude Include="dependencies\bass\random.h" />
+    <ClInclude Include="dependencies\bass\string_obfuscation.h" />
     <ClInclude Include="dependencies\config_system\config_system.hpp" />
-    <ClInclude Include="dependencies\guard\guard.hpp" />
     <ClInclude Include="dependencies\hash.hpp" />
     <ClInclude Include="dependencies\imgui\clip.h" />
     <ClInclude Include="dependencies\imgui\fonts.h" />
@@ -225,12 +224,6 @@
     <ClInclude Include="dependencies\minhook\minhook.h" />
     <ClInclude Include="dependencies\minhook\trampoline.h" />
     <ClInclude Include="dependencies\icons.hpp" />
-    <ClInclude Include="dependencies\multi_thread\atomic_lock.h" />
-    <ClInclude Include="dependencies\multi_thread\multi_thread.hpp" />
-    <ClInclude Include="dependencies\multi_thread\mutex.h" />
-    <ClInclude Include="dependencies\multi_thread\packed_heap.h" />
-    <ClInclude Include="dependencies\multi_thread\semaphores.h" />
-    <ClInclude Include="dependencies\multi_thread\shared_mutex.h" />
     <ClInclude Include="dependencies\xorstr.hpp" />
     <ClInclude Include="hacks\aim_bot\aim_bot.hpp" />
     <ClInclude Include="hacks\anim_sync\anim_sync.hpp" />

@@ -7,7 +7,8 @@ namespace supremacy::hacks {
 	) const {
 		float dist{};
 		valve::e_mask first_contents{};
-
+		auto is_window = 0;
+		auto flag = 0;
 		constexpr auto k_step_size = 4.f;
 		constexpr auto k_max_dist = 90.f;
 
@@ -43,6 +44,47 @@ namespace supremacy::hacks {
 				continue;
 			}
 
+			auto name = (int*)enter_trace.m_surface.m_name;
+			if (name) {
+				if (*name == 1936744813u
+					&& name[1] == 1601397551u
+					&& name[2] == 1768318575u
+					&& name[3] == 1731159395u
+					&& name[4] == 1936941420u
+					&& name[5] == 1651668271u
+					&& name[6] == 1734307425u
+					&& name[7] == 1936941420u)
+					is_window = 1;
+				else {
+					is_window = 0;
+
+					if (*name != 1936744813u)
+						goto LABEL_34;
+				}
+
+				if (name[1] == 1600480303u
+					&& name[2] == 1701536108u
+					&& name[3] == 1634494255u
+					&& name[4] == 1731162995u
+					&& name[5] == 1936941420u)
+				{
+					flag = 1;
+
+				LABEL_35:
+					if (is_window || flag) {
+						exit_trace = enter_trace;
+						exit_trace.m_end_pos = out + dir;
+						return true;
+					}
+
+					goto LABEL_37;
+				}
+			LABEL_34:
+				flag = 0;
+				goto LABEL_35;
+			}
+
+		LABEL_37:
 			if (!exit_trace.hit()
 				|| exit_trace.m_start_solid) {
 				if (enter_trace.m_hit_entity
@@ -121,7 +163,7 @@ namespace supremacy::hacks {
 			&& !(valve::g_engine_trace->point_contents(enter_trace.m_end_pos, valve::e_mask::shot_hull) & valve::e_mask::shot_hull))
 			return false;
 
-		auto final_dmg_modifier = 0.16f;
+		auto combined_dmg_modifier = 0.16f;
 		float combined_pen_modifier{};
 
 		const auto exit_surface_data = valve::g_surface_data->find(exit_trace.m_surface.m_surface_props);
@@ -129,12 +171,11 @@ namespace supremacy::hacks {
 
 		if (enter_surface_data->m_game.m_material == 'G'
 			|| enter_surface_data->m_game.m_material == 'Y') {
-			final_dmg_modifier = 0.05f;
+			combined_dmg_modifier = 0.05f;
 			combined_pen_modifier = 3.f;
 		}
 		else if (enter_trace.m_contents & valve::e_mask::contents_grate
 			|| enter_trace.m_surface.m_flags & valve::e_mask::surf_nodraw) {
-			final_dmg_modifier = 0.16f;
 			combined_pen_modifier = 1.f;
 		}
 		else if (enter_trace.m_hit_entity
@@ -146,15 +187,12 @@ namespace supremacy::hacks {
 				return false;
 
 			combined_pen_modifier = dmg_bullet_pen;
-			final_dmg_modifier = 0.16f;
 		}
 		else {
 			combined_pen_modifier = (
 				enter_surface_data->m_game.m_penetration_modifier
 				+ exit_surface_data->m_game.m_penetration_modifier
 				) * 0.5f;
-
-			final_dmg_modifier = 0.16f;
 		}
 
 		if (enter_surface_data->m_game.m_material == exit_surface_data->m_game.m_material) {
@@ -169,7 +207,7 @@ namespace supremacy::hacks {
 		const auto pen_dist = (exit_trace.m_end_pos - enter_trace.m_end_pos).length();
 
 		const auto lost_dmg =
-			cur_dmg * final_dmg_modifier
+			cur_dmg * combined_dmg_modifier
 			+ pen_modifier * (modifier * 3.f)
 			+ ((pen_dist * pen_dist) * modifier) / 24.f;
 
@@ -238,7 +276,7 @@ namespace supremacy::hacks {
 		valve::c_player* const shooter, valve::c_player* const target,
 		const valve::weapon_data_t* const wpn_data, const bool is_taser, vec3_t src, const vec3_t& dst
 	) const {
-		const auto pen_modifier = std::max((3.f / wpn_data->m_penetration) * 1.25f, 0.f);
+		const auto pen_modifier = std::max(0.f, (3.f / wpn_data->m_penetration) * 1.25f);
 
 		float cur_dist{};
 

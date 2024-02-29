@@ -1848,7 +1848,7 @@ bool ui::Keybind(const char* str_id, int* current_key, int* key_style) {
         strcpy_s(buf_display, "[-]");
 
     PushFont(io->Fonts->Fonts[2]);
-    window->DrawList->AddText(frame_bb.Min, g.ActiveId == id ? ImColor(255 / 255.f, 16 / 255.f, 16 / 255.f, g.Style.Alpha) : ImColor(90 / 255.f, 90 / 255.f, 90 / 255.f, g.Style.Alpha), buf_display);
+    window->DrawList->AddText(frame_bb.Min, g.ActiveId == id ? ImColor(1.f, 16 / 255.f, 16 / 255.f, g.Style.Alpha) : ImColor(90 / 255.f, 90 / 255.f, 90 / 255.f, g.Style.Alpha), buf_display);
     PopFont();
 
     return value_changed;

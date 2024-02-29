@@ -413,6 +413,8 @@ namespace supremacy::valve {
 	struct net_channel_info_t {
 		__forceinline const char* ip();
 
+		__forceinline bool loopback();
+
 		__forceinline float latency( const int flow );
 
 		__forceinline float avg_latency( const int flow );
@@ -645,9 +647,9 @@ namespace supremacy::valve {
 	};
 
 	struct net_channel_t {
-		__forceinline void send_datagram( const std::uintptr_t data );
+		__forceinline void send_datagram( const uintptr_t data );
 
-		__forceinline bool send_net_msg(void* msg, bool force_reliable = false, bool voice = false);
+		__forceinline void send_net_msg(const uintptr_t msg, bool force_reliable = false, bool voice = false);
 
 		char pad0[ 20u ]{};
 		bool m_processing_messages{};
@@ -1368,6 +1370,7 @@ namespace supremacy::valve {
 		base_cs_grenade_projectile = 9u,
 		chiken = 36u,
 		player = 40u,
+		player_resource = 41u,
 		ragdoll = 42u,
 		decoy_projectile = 48u,
 		flashbang = 77u,
@@ -1529,8 +1532,29 @@ namespace supremacy::valve {
 		e_class_id			m_class_id{};
 	};
 
-	struct csvc_msg_data_legacy_t {
-		char pad0[0x8u];
+	struct communication_string_t {
+		char data[16]{};
+		uint32_t current_len = 0;
+		uint32_t max_len = 15;
+	};
+
+	class c_voice_communication_data {
+	public:
+		uint32_t m_xuid_low;
+		uint32_t m_xuid_high;
+		int32_t m_sequence_bytes;
+		uint32_t m_section_number;
+		uint32_t m_uncompressed_sample_offset;
+
+		__forceinline uint8_t* raw_data() {
+			return (uint8_t*)this;
+		}
+	};
+
+	class c_svc_msg_voice_data
+	{
+	public:
+		char pad0[8u];
 		int32_t m_client;
 		int32_t m_audible_mask;
 		uint32_t m_xuid_low;
@@ -1542,36 +1566,52 @@ namespace supremacy::valve {
 		int32_t m_sequence_bytes;
 		uint32_t m_section_number;
 		uint32_t m_uncompressed_sample_offset;
+
+		__forceinline c_voice_communication_data get_data() const {
+			c_voice_communication_data data{};
+			data.m_xuid_low = m_xuid_low;
+			data.m_xuid_high = m_xuid_high;
+			data.m_sequence_bytes = m_sequence_bytes;
+			data.m_section_number = m_section_number;
+			data.m_uncompressed_sample_offset = m_uncompressed_sample_offset;
+			return data;
+		}
 	};
 
-	struct cclc_msg_data_legacy_t {
-		uint32_t i_net_msg_vtable;
-		char pad0[0x4u];
-		uint32_t m_voice_data_table;
-		char pad1[0x8u];
-		void* m_data;
-		uint32_t m_xuid_low{};
-		uint32_t m_xuid_high{};
+	struct clc_msg_voice_data_t {
+		uint32_t m_vtable;
+		uint8_t pad0[4u];
+		uint32_t m_clc_msg_voice_data_vtable;
+		uint8_t pad1[8u];
+		uintptr_t m_data;
+		uint32_t m_xuid_low;
+		uint32_t m_xuid_high;
 		int32_t m_format;
 		int32_t m_sequence_bytes;
 		uint32_t m_section_number;
 		uint32_t m_uncompressed_sample_offset;
 		int32_t m_cached_size;
 		uint32_t m_flags;
-		uint8_t m_no_stack_overflow[0xffu];
+		uint8_t pad2[255u];
+
+		__forceinline void set_data(c_voice_communication_data* data) {
+			m_xuid_low = data->m_xuid_low;
+			m_xuid_high = data->m_xuid_high;
+			m_sequence_bytes = data->m_sequence_bytes;
+			m_section_number = data->m_section_number;
+			m_uncompressed_sample_offset = data->m_uncompressed_sample_offset;
+		}
 	};
 
-	struct cheat_data_t {
-		uint8_t m_unique_key{};
-		int8_t m_player_idx{};
+#pragma pack(push, 1)
+	struct shared_esp_data_t {		
+		int16_t m_player_idx{};
+		int16_t m_unique_key{};
 		int16_t m_x{};
 		int16_t m_y{};
 		int16_t m_z{};
-		int8_t m_player_health{};
-		int8_t m_player_weapon_id{};
-		int8_t m_player_weapon_type{};
 	};
-
+#pragma pack(pop)
 }
 
 #include "impl/other.inl"

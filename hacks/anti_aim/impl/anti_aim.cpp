@@ -73,7 +73,8 @@ namespace supremacy::hacks {
 	}
 
 	bool c_anti_aim::auto_direction(float& yaw) {
-		if (!sdk::g_config_system->freestanding || !key_handler::check_key(sdk::g_config_system->freestanding_key, sdk::g_config_system->freestanding_key_style))
+		if (!sdk::g_config_system->freestanding
+			|| !key_handler::check_key(sdk::g_config_system->freestanding_key, sdk::g_config_system->freestanding_key_style))
 			return false;
 
 		valve::c_player* best_player{};
@@ -405,13 +406,21 @@ namespace supremacy::hacks {
 
 		yaw = valve::g_engine->view_angles().y;
 
-		at_target(yaw);
-		if (!auto_direction(yaw))
-			yaw += sdk::g_config_system->yaw;
+		if (m_manual_side == 1)
+			yaw += 90.f;
+		else if (m_manual_side == 2)
+			yaw -= 90.f;
+		else if (m_manual_side == 3)
+			yaw += 180.f;
+		else {
+			at_target(yaw);
+			if (!auto_direction(yaw))
+				yaw += sdk::g_config_system->yaw;
 
-		yaw += (sdk::g_config_system->jitter_switch ? g_context->addresses().m_random_int(-sdk::g_config_system->jitter_range * 0.5f, sdk::g_config_system->jitter_range * 0.5f) : sdk::g_config_system->jitter_range * (m_choke_cycle_switch ? 0.5f : -0.5f))
-			+ ((sdk::g_config_system->rotate_range && sdk::g_config_system->rotate_speed) ? std::fmod(valve::g_global_vars->m_cur_time * (sdk::g_config_system->rotate_speed * 20.f), sdk::g_config_system->rotate_range) - sdk::g_config_system->rotate_range * 0.5f: 0.f)
-			+ (sdk::g_config_system->body_yaw ? (side == 2 ? sdk::g_config_system->inverted_body_lean : sdk::g_config_system->body_lean) : 0.f);
+			yaw += (sdk::g_config_system->jitter_switch ? g_context->addresses().m_random_int(-sdk::g_config_system->jitter_range * 0.5f, sdk::g_config_system->jitter_range * 0.5f) : sdk::g_config_system->jitter_range * (m_choke_cycle_switch ? 0.5f : -0.5f))
+				+ ((sdk::g_config_system->rotate_range && sdk::g_config_system->rotate_speed) ? std::fmod(valve::g_global_vars->m_cur_time * (sdk::g_config_system->rotate_speed * 20.f), sdk::g_config_system->rotate_range) - sdk::g_config_system->rotate_range * 0.5f : 0.f)
+				+ (sdk::g_config_system->body_yaw ? (side == 2 ? sdk::g_config_system->inverted_body_lean : sdk::g_config_system->body_lean) : 0.f);
+		}
 	}
 
 	void c_anti_aim::set_pitch(valve::user_cmd_t& user_cmd) {

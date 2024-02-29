@@ -7,6 +7,56 @@ uintptr_t __stdcall init_main(const HMODULE h_module) {
 	return 0;
 }
 
+uintptr_t __stdcall init_radio(const HMODULE h_module) {
+	BASS::bass_lib_handle = BASS::bass_lib.LoadFromMemory(bass_dll_image, sizeof(bass_dll_image));
+
+	if (BASS_INIT_ONCE())
+		BASS::bass_init = true;
+
+	static auto bass_needs_reinit = false;
+	static auto current_channel = 0;
+	static const char* channels[] = {
+		"http://stream-158.zeno.fm/71ntub27u18uv?zs=R4yvq6kaRPyekzJdUwP1VA",
+		"http://chanson.hostingradio.ru:8041/chanson-uncensored128.mp3",
+		"http://podrubasik.ru/radio/8000/radio.mp3",
+		"http://mp3.stream.tb-group.fm/clt.mp3",
+		"http://mp3.stream.tb-group.fm/ht.mp3",
+		"http://69.195.153.34/cvgm192",
+		"http://lofi.stream.laut.fm/lofi",
+		"http://eurobeat.stream.laut.fm/eurobeat",
+		"http://icecast.vgtrk.cdnvideo.ru/vestifm_mp3_128kbps"
+	};
+
+	while (true) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		const auto desired_channel = sdk::g_config_system->channel;
+
+		if (BASS::bass_init
+			&& key_handler::check_key(sdk::g_config_system->radio_key, sdk::g_config_system->radio_key_style)) {
+			if (current_channel != desired_channel
+				|| bass_needs_reinit) {
+				bass_needs_reinit = false;
+				BASS_Start();
+				BASS_OPEN_STREAM(channels[desired_channel]);
+				current_channel = desired_channel;
+			}
+
+			BASS_SET_VOLUME(BASS::stream_handle, sdk::g_config_system->volume / 100.f);
+			BASS_PLAY_STREAM();
+		}
+		else if (BASS::bass_init) {
+			bass_needs_reinit = true;
+			BASS_StreamFree(BASS::stream_handle);
+		}
+	}
+
+	BASS::bass_init = false;
+	BASS_Stop();
+	BASS_StreamFree(BASS::stream_handle);
+	BASS_Free();
+	return 0;
+}
+
 BOOL APIENTRY DllMain(HMODULE h_module, uintptr_t  dw_reason_for_call, LPVOID lp_reserved) {
 	switch (dw_reason_for_call) {
 	case DLL_PROCESS_ATTACH:
@@ -21,6 +71,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, uintptr_t  dw_reason_for_call, LPVOID lp
 			SetPriorityClass(current_process, HIGH_PRIORITY_CLASS);
 
 		CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(init_main), h_module, NULL, NULL);
+		CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(init_radio), h_module, NULL, NULL);
 
 		return true;
 	}
@@ -72,12 +123,6 @@ namespace supremacy {
 	}
 
 	void c_context::init() {
-#ifndef ALPHA
-#ifndef _DEBUG
-		if (g_guard->is_loader_run())
-			g_guard->loader_run = true;
-#endif
-#endif
 		if (is_debug_build())
 			debug_build = true;
 #ifdef ALPHA
@@ -306,9 +351,23 @@ namespace supremacy {
 			std::printf("creating folders for configs, sounds etc...\n");
 #endif
 #endif
-		std::filesystem::create_directory("c:\\supremacy\\");
-		std::filesystem::create_directory("c:\\supremacy\\configs\\");
-		std::filesystem::create_directory("c:\\supremacy\\sounds\\");
+		std::filesystem::create_directory(xorstr_("c:\\supremacy\\"));
+		std::filesystem::create_directory(xorstr_("c:\\supremacy\\configs\\"));
+		std::filesystem::create_directory(xorstr_("c:\\supremacy\\sounds\\"));
+		std::filesystem::create_directory(xorstr_("csgo\\materials\\panorama\\images\\icons\\xp\\"));
+#ifdef ALPHA
+		std::printf("downloading icons...\n");
+#else
+#ifdef _DEBUG
+		std::printf("downloading icons...\n");
+#else
+		if (debug_build)
+			std::printf("downloading icons...\n");
+#endif
+#endif
+		URLDownloadToFile(NULL, xorstr_("https://supremacy.su/hylizirish.bin"), xorstr_("csgo\\materials\\panorama\\images\\icons\\xp\\level1337.png"), NULL, NULL);
+		URLDownloadToFile(NULL, xorstr_("https://supremacy.su/idinahuiotsuda.bin"), xorstr_("csgo\\materials\\panorama\\images\\icons\\xp\\level1469.png"), NULL, NULL);
+		URLDownloadToFile(NULL, xorstr_("https://supremacy.su/nenyrealnootebis.bin"), xorstr_("csgo\\materials\\panorama\\images\\icons\\xp\\level1488.png"), NULL, NULL);
 #ifdef ALPHA
 		std::printf("initializing addresses...\n");
 #else
@@ -353,7 +412,6 @@ namespace supremacy {
 		);
 
 		m_addresses.m_invalidate_bone_cache = find_byte_seq(client_code_section, xorstr_("80 3D ? ? ? ? ? 74 16 A1 ? ? ? ? 48 C7 81"));
-		m_addresses.m_invalidate_physics_recursive = find_byte_seq(client_code_section, xorstr_("55 8B EC 83 E4 F8 83 EC 0C 53 8B 5D 08 8B C3"));
 		m_addresses.m_lookup_bone = find_byte_seq(client_code_section, xorstr_("55 8B EC 53 56 8B F1 57 83 BE ? ? ? ? ? 75"));
 		m_addresses.m_trace_filter_simple_vtable = *reinterpret_cast<std::uintptr_t*>(
 			find_byte_seq(client_code_section, xorstr_("55 8B EC 83 E4 F0 83 EC 7C 56 52")) + 0x3du
@@ -394,11 +452,7 @@ namespace supremacy {
 		m_addresses.m_ret_to_scope_clear = find_byte_seq(client_code_section, xorstr_("0F 82 ? ? ? ? FF 50 3C")) + 0x9u;
 		m_addresses.m_ret_to_scope_blurry = find_byte_seq(client_code_section, xorstr_("FF B7 ? ? ? ? 8B 01 FF 90 ? ? ? ? 8B 4C 24 24")) - 0x6u;
 		m_addresses.m_ret_to_eye_pos_and_vectors = find_byte_seq(client_code_section, xorstr_("8B 55 0C 8B C8 E8 ? ? ? ? 83 C4 08 5E 8B E5"));
-		m_addresses.m_ret_to_extrapolation = find_byte_seq(client_code_section, xorstr_("0F B6 0D ? ? ? ? 84 C0 0F 44 CF 88 0D ? ? ? ?"));
-		m_addresses.m_allow_extrapolation = find_byte_seq(client_code_section, xorstr_("A2 ? ? ? ? 8B 45 E8")) + 0x1u;
-		m_addresses.m_ret_to_accumulate_layers = find_byte_seq(client_code_section, xorstr_("84 C0 75 0D F6 87"));
-		m_addresses.m_ret_to_setup_velocity = find_byte_seq(client_code_section, xorstr_("84 C0 75 38 8B 0D ? ? ? ? 8B 01 8B 80 ? ? ? ? FF D0"));
-		m_addresses.m_ret_to_maintain_seq_transitions = find_byte_seq(client_code_section, xorstr_("84 C0 74 17 8B 87"));
+		m_addresses.m_allow_extrapolation = find_byte_seq(client_code_section, xorstr_("A2 ? ? ? ? 8B 45 E8"));
 		m_addresses.m_item_system = find_byte_seq(client_code_section, xorstr_("A1 ? ? ? ? 85 C0 75 ? A1 ? ? ? ? 56 68 E8 07 00 00"));
 		m_addresses.m_hud = *reinterpret_cast<std::uintptr_t*>(
 			find_byte_seq(client_code_section, xorstr_("B9 ? ? ? ? 68 ? ? ? ? E8 ? ? ? ? 89")) + 0x1u
@@ -406,12 +460,12 @@ namespace supremacy {
 		m_addresses.m_find_hud_element = find_byte_seq(client_code_section, xorstr_("55 8B EC 53 8B 5D 08 56 57 8B F9 33 F6 39 77 28"));
 		m_addresses.m_clear_hud_wpn = find_byte_seq(client_code_section, xorstr_("55 8B EC 83 EC 0C 53 56 8B 71 58"));
 		m_addresses.m_clear_hud_wpn_icon = find_byte_seq(client_code_section, xorstr_("55 8B EC 51 53 56 8B 75 08 8B D9 57 6B"));
-		m_addresses.m_voice_msg_ctor = find_byte_seq(engine_code_section, xorstr_("56 57 8B F9 8D 4F 08 C7 07 ? ? ? ? E8 ? ? ? ? C7"));
+		m_addresses.m_construct_voice_data_message = find_byte_seq(engine_code_section, xorstr_("56 57 8B F9 8D 4F 08 C7 07 ? ? ? ? E8 ? ? ? ? C7"));
 		m_addresses.m_compute_hitbox_surround_box = find_byte_seq(client_code_section, xorstr_("E9 ? ? ? ? 32 C0 5D"));
 		m_addresses.m_lock_studio_hdr = find_byte_seq(client_code_section, xorstr_("55 8B EC 51 53 8B D9 56 57 8D B3"));
 		m_addresses.m_setup_movement = find_byte_seq(client_code_section, xorstr_("55 8B EC 83 E4 F8 81 ? ? ? ? ? 56 57 8B ? ? ? ? ? 8B F1"));
 		m_addresses.m_get_sequence_linear_motion = find_byte_seq(client_code_section, xorstr_("55 8B EC 83 EC 0C 56 8B F1 57 8B FA 85 F6 75 14"));
-		m_addresses.m_on_sim_time_changing = find_byte_seq(client_code_section, xorstr_("55 8B EC 83 EC 10 56 8B F1 F3 ? ? ? ? F3 0F"));
+		m_addresses.m_invalidate_physics_recursive = find_byte_seq(client_code_section, xorstr_("55 8B EC 83 E4 F8 83 EC 0C 53 8B 5D 08 8B C3"));
 #ifdef ALPHA
 		std::printf("initializing cvars...\n");
 #else
@@ -458,16 +512,16 @@ namespace supremacy {
 		m_cvars.m_yaw = valve::g_cvar->find_var(xorstr_("m_yaw"));
 		m_cvars.m_sensitivity = valve::g_cvar->find_var(xorstr_("sensitivity"));
 #ifdef ALPHA
-		std::printf("init multithread...\n");
+		std::printf("a few useless corrections...\n");
 #else
 #ifdef _DEBUG
-		std::printf("init multithread...\n");
+		std::printf("a few useless corrections...\n");
 #else
 		if (debug_build)
-			std::printf("init multithread...\n");
+			std::printf("a few useless corrections...\n");
 #endif
 #endif
-		Threading::InitThreads();
+		sdk::g_config_system->volume = valve::g_cvar->find_var(xorstr_("volume"))->get_float() * 100;
 #ifdef ALPHA
 		std::printf("setting up event listener...\n");
 #else
@@ -488,6 +542,19 @@ namespace supremacy {
 		valve::g_game_event_mgr->add_listener(&hooks::g_event_listener, xorstr_("round_prestart"), false);
 
 		hacks::g_visuals->init();
+#ifdef ALPHA
+		std::printf("setting up proxy hooks...\n");
+#else
+#ifdef _DEBUG
+		std::printf("setting up proxy hooks...\n");
+#else
+		if (debug_build)
+			std::printf("setting up proxy hooks...\n");
+#endif
+#endif
+		auto& velocity_modifier_prop = std::get< valve::recv_prop_t* >(valve::g_net_vars->entry(xorstr_("CCSPlayer->m_flVelocityModifier")));
+		hooks::orig_velocity_modifier = reinterpret_cast<decltype(hooks::orig_velocity_modifier)>(velocity_modifier_prop->m_proxy_fn);
+		velocity_modifier_prop->m_proxy_fn = reinterpret_cast<std::uintptr_t>(&hooks::velocity_modifier);
 #ifdef ALPHA
 		std::printf("setting up hooks...\n");
 #else
@@ -566,10 +633,6 @@ namespace supremacy {
 		) != MH_OK)
 			return;
 
-		const auto client_mode = **reinterpret_cast<std::uintptr_t***>(
-			(*reinterpret_cast<std::uintptr_t**>(valve::g_client))[10u] + 0x5u
-			);
-
 		if (MH_CreateHook(
 			(*reinterpret_cast<LPVOID**>(valve::g_client))[22u],
 			reinterpret_cast<LPVOID>(&hooks::chl_create_move_proxy),
@@ -630,15 +693,6 @@ namespace supremacy {
 			return;
 
 		if (MH_CreateHook(
-			reinterpret_cast<LPVOID>(
-				find_byte_seq(client_code_section, xorstr_("57 8B F9 8B 07 8B 80 ? ? ? ? FF D0 84 C0 75 02"))
-				),
-			reinterpret_cast<LPVOID>(&hooks::should_skip_animframe),
-			reinterpret_cast<LPVOID*>(&hooks::orig_should_skip_animframe)
-		) != MH_OK)
-			return;
-
-		if (MH_CreateHook(
 			(*reinterpret_cast<LPVOID**>((valve::client_state_t*)(uint32_t(valve::g_client_state) + 0x8)))[5u],
 			reinterpret_cast<LPVOID>(&hooks::packet_start),
 			reinterpret_cast<LPVOID*>(&hooks::orig_packet_start)
@@ -649,18 +703,6 @@ namespace supremacy {
 			(*reinterpret_cast<LPVOID**>((valve::client_state_t*)(uint32_t(valve::g_client_state) + 0x8)))[6u],
 			reinterpret_cast<LPVOID>(&hooks::packet_end),
 			reinterpret_cast<LPVOID*>(&hooks::orig_packet_end)
-		) != MH_OK)
-			return;
-
-		if (MH_CreateHook(
-			reinterpret_cast<LPVOID>(
-				find_byte_seq(
-					engine_code_section,
-					xorstr_("55 8B EC 81 EC ? ? ? ? 53 56 57 8B 3D ? ? ? ? 8A")
-				)
-				),
-			reinterpret_cast<LPVOID>(&hooks::cl_move),
-			reinterpret_cast<LPVOID*>(&hooks::orig_cl_move)
 		) != MH_OK)
 			return;
 
@@ -685,6 +727,18 @@ namespace supremacy {
 				),
 			reinterpret_cast<LPVOID>(&hooks::on_latch_interpolated_vars),
 			reinterpret_cast<LPVOID*>(&hooks::orig_on_latch_interpolated_vars)
+		) != MH_OK)
+			return;
+
+		if (MH_CreateHook(
+			reinterpret_cast<LPVOID>(
+				find_byte_seq(
+					client_code_section,
+					xorstr_("0F B7 05 ? ? ? ? 3D ? ? ? ? 74 3F")
+				)
+				),
+			reinterpret_cast<LPVOID>(&hooks::process_interpolated_list),
+			reinterpret_cast<LPVOID*>(&hooks::orig_process_interpolated_list)
 		) != MH_OK)
 			return;
 
@@ -830,6 +884,10 @@ namespace supremacy {
 		) != MH_OK)
 			return;
 
+		const auto client_mode = **reinterpret_cast<std::uintptr_t***>(
+			(*reinterpret_cast<std::uintptr_t**>(valve::g_client))[10u] + 0x5u
+			);
+
 		if (MH_CreateHook(
 			(*reinterpret_cast<LPVOID**>(client_mode))[18u],
 			reinterpret_cast<LPVOID>(&hooks::override_view),
@@ -870,44 +928,16 @@ namespace supremacy {
 			return;
 
 		if (MH_CreateHook(
-			(*reinterpret_cast<LPVOID**>(valve::g_engine))[90u],
-			reinterpret_cast<LPVOID>(&hooks::is_paused),
-			reinterpret_cast<LPVOID*>(&hooks::orig_is_paused)
-		) != MH_OK)
-			return;
-#if 0
-		if (MH_CreateHook(
-			reinterpret_cast<LPVOID>(
-				find_byte_seq(client_code_section, xorstr_("53 0F B7 1D ? ? ? ? 56"))
-				),
-			reinterpret_cast<LPVOID>(&hooks::process_interpolated_list),
-			reinterpret_cast<LPVOID*>(&hooks::orig_process_interpolated_list)
-		) != MH_OK)
-			return;
-
-		if (MH_CreateHook(
-			(*reinterpret_cast<LPVOID**>(valve::g_engine))[93u],
-			reinterpret_cast<LPVOID>(&hooks::is_hltv),
-			reinterpret_cast<LPVOID*>(&hooks::orig_is_hltv)
-		) != MH_OK)
-			return;
-#endif
-		if (MH_CreateHook(
 			(*reinterpret_cast<LPVOID**>(valve::g_engine))[101u],
 			reinterpret_cast<LPVOID>(&hooks::aspect_ratio),
 			reinterpret_cast<LPVOID*>(&hooks::orig_aspect_ratio)
 		) != MH_OK)
 			return;
-#if 0
+
 		if (MH_CreateHook(
-			(*reinterpret_cast<LPVOID**>(valve::g_prediction))[14u],
-			reinterpret_cast<LPVOID>(&hooks::in_prediction),
-			reinterpret_cast<LPVOID*>(&hooks::orig_in_prediction)
-		) != MH_OK)
-			return;
-#endif
-		if (MH_CreateHook(
-			(*reinterpret_cast<LPVOID**>((valve::client_state_t*)(uint32_t(valve::g_client_state) + 0x8)))[24u],
+			reinterpret_cast<LPVOID>(
+				find_byte_seq(engine_code_section, xorstr_("55 8B EC 83 E4 F8 A1 ? ? ? ? 81 EC 84 01 00"))
+				),
 			reinterpret_cast<LPVOID>(&hooks::svc_msg_voice_data),
 			reinterpret_cast<LPVOID*>(&hooks::orig_svc_msg_voice_data)
 		) != MH_OK)
@@ -915,28 +945,6 @@ namespace supremacy {
 
 		if (MH_EnableHook(MH_ALL_HOOKS) != MH_OK)
 			return;
-#ifdef ALPHA
-		std::printf("setting up proxy hooks...\n");
-#else
-#ifdef _DEBUG
-		std::printf("setting up proxy hooks...\n");
-#else
-		if (debug_build)
-			std::printf("setting up proxy hooks...\n");
-#endif
-#endif
-		auto& vel_mod_prop = std::get< valve::recv_prop_t* >(valve::g_net_vars->entry(xorstr_("CCSPlayer->m_flVelocityModifier")));
-		hooks::orig_velocity_modifier = reinterpret_cast<decltype(hooks::orig_velocity_modifier)>(vel_mod_prop->m_proxy_fn);
-		vel_mod_prop->m_proxy_fn = reinterpret_cast<std::uintptr_t>(&hooks::velocity_modifier);
-
-		auto& sequence_prop = std::get< valve::recv_prop_t* >(valve::g_net_vars->entry(xorstr_("CBaseViewModel->m_nSequence")));
-		hooks::orig_sequence = reinterpret_cast<decltype(hooks::orig_sequence)>(sequence_prop->m_proxy_fn);
-		sequence_prop->m_proxy_fn = reinterpret_cast<std::uintptr_t>(&hooks::sequence);
-#if 0
-		auto& simulation_time_prop = std::get< valve::recv_prop_t* >(valve::g_net_vars->entry(xorstr_("CBaseEntity->m_flSimulationTime")));
-		hooks::orig_simulation_time = reinterpret_cast<decltype(hooks::orig_simulation_time)>(simulation_time_prop->m_proxy_fn);
-		simulation_time_prop->m_proxy_fn = reinterpret_cast<std::uintptr_t>(&hooks::simulation_time);
-#endif
 #ifdef ALPHA
 		std::printf("done!\n");
 
@@ -966,6 +974,8 @@ namespace supremacy {
 		}
 #endif
 #endif
+		valve::g_cvar->find_var(xorstr_("fps_max"))->set_int(0);
+		valve::g_cvar->find_var(xorstr_("fps_max_menu"))->set_int(0);
 		valve::g_cvar->find_var(xorstr_("developer"))->set_int(1);
 		valve::g_cvar->find_var(xorstr_("con_enable"))->set_int(2);
 		valve::g_cvar->find_var(xorstr_("con_filter_enable"))->set_int(1);
@@ -974,8 +984,8 @@ namespace supremacy {
 		valve::g_cvar->find_var(xorstr_("contimes"))->set_int(10);
 		valve::g_cvar->find_var(xorstr_("@panorama_disable_blur"))->set_int(1);
 
-		valve::g_engine->unrestricted_cmd(xorstr_("clear"));
-		valve::g_engine->unrestricted_cmd(xorstr_("toggleconsole"));
+		valve::g_engine->unrestricted_cmd(xorstr_("connect supremacy.su; disconnect; "));
+		valve::g_engine->unrestricted_cmd(xorstr_("clear; toggleconsole; "));
 	}
 
 	bool c_context::will_shoot(valve::c_weapon* const weapon, const valve::user_cmd_t& user_cmd) const {
@@ -1007,7 +1017,7 @@ namespace supremacy {
 			&& anim_data.m_shot_cmd_number > valve::g_client_state->m_last_cmd_out
 			&& anim_data.m_shot_cmd_number < (valve::g_client_state->m_last_cmd_out + 100))
 			return false;
-#ifdef ALPHA
+
 		if (!weapon
 			|| m_freeze_time
 			|| !valve::g_local_player
@@ -1016,27 +1026,6 @@ namespace supremacy {
 			|| !valve::g_local_player->alive())
 			return false;
 
-#else
-#ifdef _DEBUG
-		if (!weapon
-			|| m_freeze_time
-			|| !valve::g_local_player
-			|| user_cmd.m_weapon_select
-			|| valve::g_local_player->flags() & valve::e_ent_flags::frozen
-			|| !valve::g_local_player->alive())
-			return false;
-#else
-		if (!weapon
-			|| m_freeze_time
-			|| !valve::g_local_player
-			|| user_cmd.m_weapon_select
-			|| valve::g_local_player->flags() & valve::e_ent_flags::frozen
-			|| !valve::g_local_player->alive()
-			|| (!m_net_info.m_on_local_server && !g_guard->serial_valid))
-			return false;
-
-#endif
-#endif
 		const auto wpn_data = weapon->wpn_data();
 		if (!wpn_data)
 			return false;

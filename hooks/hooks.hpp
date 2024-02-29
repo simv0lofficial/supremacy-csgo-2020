@@ -77,9 +77,6 @@ namespace supremacy::hooks {
 	);
 	inline decltype( &standard_blending_rules ) orig_standard_blending_rules{};
 
-	bool __fastcall should_skip_animframe();
-	inline decltype(&should_skip_animframe) orig_should_skip_animframe{};
-
 	void __fastcall packet_start(
 		const std::uintptr_t ecx, const std::uintptr_t edx, const int in_seq, const int out_acked
 	);
@@ -88,9 +85,6 @@ namespace supremacy::hooks {
 	void __fastcall packet_end( const std::uintptr_t ecx, const std::uintptr_t edx );
 	inline decltype( &packet_end ) orig_packet_end{};
 
-	void __cdecl cl_move(float accumulate_extra_samples, bool final_tick);
-	inline decltype (&cl_move) orig_cl_move{};
-
 	void __fastcall physics_simulate( valve::c_player* const ecx, const std::uintptr_t edx );
 	inline decltype( &physics_simulate ) orig_physics_simulate{};
 
@@ -98,6 +92,9 @@ namespace supremacy::hooks {
 		valve::c_player* const ecx, const std::uintptr_t edx, const int flags
 	);
 	inline decltype( &on_latch_interpolated_vars ) orig_on_latch_interpolated_vars{};
+
+	int process_interpolated_list();
+	inline decltype (&process_interpolated_list) orig_process_interpolated_list{};
 
 	bool __fastcall should_interpolate( valve::c_player* const ecx, const std::uintptr_t edx );
 	inline decltype( &should_interpolate ) orig_should_interpolate{};
@@ -108,14 +105,8 @@ namespace supremacy::hooks {
 	);
 	inline decltype( &write_user_cmd_delta_to_buffer ) orig_write_user_cmd_delta_to_buffer{};
 
-	void __cdecl velocity_modifier( valve::recv_proxy_data_t* const data, valve::c_entity* const entity, void* const out );
-	inline decltype( &velocity_modifier ) orig_velocity_modifier{};
-
-	void __cdecl sequence( valve::recv_proxy_data_t* const data, valve::c_entity* const entity, void* const out );
-	inline decltype( &sequence ) orig_sequence{};
-
-	void __cdecl simulation_time(valve::recv_proxy_data_t* const data, valve::c_entity* const entity, void* const out);
-	inline decltype(&simulation_time) orig_simulation_time{};
+	void __cdecl velocity_modifier(valve::recv_proxy_data_t* const data, valve::c_entity* const entity, void* const out);
+	inline decltype(&velocity_modifier) orig_velocity_modifier{};
 
 	void __fastcall modify_eye_pos( valve::anim_state_t* const ecx, const std::uintptr_t edx, vec3_t& eye_pos );
 	inline decltype( &modify_eye_pos ) orig_modify_eye_pos{};
@@ -176,6 +167,9 @@ namespace supremacy::hooks {
 	);
 	inline decltype( &override_view ) orig_override_view{};
 
+	void __fastcall process_movement(std::uintptr_t ecx, std::uintptr_t edx, valve::c_player* player, valve::move_data_t* move_data);
+	inline decltype(&process_movement) orig_process_movement{};
+
 	int __fastcall do_post_screen_space_effects(
 		const std::uintptr_t ecx, const std::uintptr_t edx, valve::view_setup_t* const setup
 	);
@@ -193,23 +187,10 @@ namespace supremacy::hooks {
 	qangle_t* __fastcall get_eye_angles( valve::c_player* const ecx, const std::uintptr_t edx );
 	inline decltype( &get_eye_angles ) orig_get_eye_angles{};
 
-	bool __fastcall is_paused(const std::uintptr_t ecx, const std::uintptr_t edx);
-	inline decltype(&is_paused) orig_is_paused{};
-
-	int __fastcall process_interpolated_list();
-	inline decltype(&process_interpolated_list) orig_process_interpolated_list{};
-
-	bool __fastcall is_hltv(const std::uintptr_t ecx, const std::uintptr_t edx);
-	inline decltype(&is_hltv) orig_is_hltv{};
-
 	float __fastcall aspect_ratio(const std::uintptr_t ecx, const std::uintptr_t edx, int width, int height);
 	inline decltype(&aspect_ratio) orig_aspect_ratio{};
 
-	bool __fastcall in_prediction();
-	using fn_t = bool(__thiscall*) (void*);
-	inline fn_t orig_in_prediction{};
-
-	bool __fastcall svc_msg_voice_data(std::uintptr_t ecx, std::uintptr_t edx, void* msg);
+	bool __fastcall svc_msg_voice_data(std::uintptr_t ecx, std::uintptr_t edx, valve::c_svc_msg_voice_data* msg);
 	inline decltype(&svc_msg_voice_data) orig_svc_msg_voice_data;
 
 	struct event_listener_t : public valve::base_event_listener_t {

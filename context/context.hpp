@@ -75,7 +75,7 @@ namespace supremacy {
 			std::uintptr_t		m_reset_anim_state{}, m_update_anim_state{},
 								m_set_abs_angles{}, m_set_abs_origin{},
 								m_lookup_seq_act{}, m_breakable{}, m_user_cmd_calc_checksum{},
-								m_set_collision_bounds{}, m_invalidate_bone_cache{}, m_invalidate_physics_recursive{}, m_lookup_bone{},
+								m_set_collision_bounds{}, m_invalidate_bone_cache{}, m_lookup_bone{},
 								m_trace_filter_simple_vtable{}, m_trace_filter_skip_two_entities_vtable{},
 								m_write_user_cmd{}, m_weapon_system{}, m_calc_shotgun_spread{},
 								m_key_values_init{}, m_key_values_load_from_buffer{}, m_cam_sv_cheats_ret{},
@@ -83,15 +83,14 @@ namespace supremacy {
 								m_start_drawing{}, m_finish_drawing{}, m_add_clred_text{}, m_calc_text_size{},
 								m_set_font_glyph_set{}, m_has_c4{}, m_ret_insert_into_tree{}, m_smoke_count{},
 								m_disable_post_processing{}, m_crosshair_ret{}, m_ret_to_scope_clear{}, m_ret_to_scope_blurry{},
-								m_ret_to_eye_pos_and_vectors{}, m_ret_to_extrapolation{}, m_allow_extrapolation{},
-								m_ret_to_accumulate_layers{}, m_ret_to_setup_velocity{}, m_ret_to_maintain_seq_transitions{},
+								m_ret_to_eye_pos_and_vectors{}, m_allow_extrapolation{},
 								m_item_system{}, m_hud{}, m_find_hud_element{}, m_clear_hud_wpn{},
-								m_clear_hud_wpn_icon{}, m_voice_msg_ctor{}, m_compute_hitbox_surround_box{}, m_lock_studio_hdr{},
-								m_setup_movement{}, m_get_sequence_linear_motion{}, m_on_sim_time_changing{};
+								m_clear_hud_wpn_icon{}, m_construct_voice_data_message{}, m_compute_hitbox_surround_box{}, m_lock_studio_hdr{},
+								m_setup_movement{}, m_get_sequence_linear_motion{}, m_invalidate_physics_recursive{};
 
 			int*				m_pred_seed{};
 			valve::c_player*	m_pred_player{};
-						
+
 			angle_matrix_t		m_angle_matrix{};
 			set_clan_tag_t		m_set_clan_tag{};
 			
@@ -100,9 +99,9 @@ namespace supremacy {
 
 		struct cvars_t {
 			valve::cvar_t*	m_r_jiggle_bones{}, *m_cl_interp{},
-				* m_cl_interp_ratio{}, * m_sv_client_min_interp_ratio{},
-				* m_sv_client_max_interp_ratio{}, *m_cl_updaterate{},
-				* m_sv_minupdaterate{}, * m_sv_maxupdaterate{},
+							*m_cl_interp_ratio{}, *m_sv_client_min_interp_ratio{},
+							*m_sv_client_max_interp_ratio{}, *m_cl_updaterate{},
+							*m_sv_minupdaterate{}, *m_sv_maxupdaterate{},
 							*m_ff_damage_reduction_bullets, *m_ff_damage_bullet_penetration{},
 							*m_sv_autobunnyhopping{}, *m_sv_clockcorrection_msecs{},
 							*m_sv_maxvelocity{}, *m_sv_friction{},
@@ -111,10 +110,10 @@ namespace supremacy {
 							*m_sv_enablebunnyhopping{}, *m_sv_jump_impulse{}, *m_sv_gravity{},
 							*m_weapon_recoil_scale{}, *m_weapon_accuracy_shotgun_spread_patterns{},
 							*m_molotov_throw_detonate_time{}, *m_weapon_molotov_maxdetonateslope{},
-				* m_cl_fullupdate{}, * m_mp_teammates_are_enemies{}, * m_sv_legacy_desync{},
-				* m_cl_lagcompensation{}, * m_cl_threaded_bone_setup{}, * m_cl_extrapolate{},
-				* m_name{}, * m_voice_loopback{}, * m_pitch{}, * m_yaw{}, *m_sensitivity{};
-		}						m_cvars{};
+							*m_cl_fullupdate{}, *m_mp_teammates_are_enemies{}, *m_sv_legacy_desync{},
+							*m_cl_lagcompensation{}, *m_cl_threaded_bone_setup{}, *m_cl_extrapolate{},
+							*m_name{}, *m_voice_loopback{}, *m_pitch{}, *m_yaw{}, *m_sensitivity{};
+		}					m_cvars{};
 
 		struct net_info_t {
 			float	m_lerp{};
@@ -150,7 +149,7 @@ namespace supremacy {
 			bool r8_ret, const int shift_amount, const bool normal
 		) const;
 
-		void add_packet( const int cmd_number );
+		void add_packet(const int cmd_number);
 
 		__forceinline addresses_t& addresses( );
 

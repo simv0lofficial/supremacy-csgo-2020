@@ -42,7 +42,7 @@ namespace supremacy::hacks {
 			const valve::e_ent_flags flags, const valve::e_move_type move_type
 		) const;
 
-		void peek_assistence(valve::user_cmd_t& user_cmd);
+		void peek_assistence(qangle_t& wish_angles, valve::user_cmd_t& user_cmd);
 
 		void on_create_move(valve::user_cmd_t& user_cmd);
 
@@ -51,8 +51,6 @@ namespace supremacy::hacks {
 		__forceinline float& prev_view_yaw();
 
 		__forceinline int& stop_type();
-
-		__forceinline bool& forced_lby_update();
 	};
 
 	inline const auto g_movement = std::make_unique< c_movement >();

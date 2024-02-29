@@ -24,8 +24,6 @@ namespace supremacy::valve {
 
 		__forceinline bool compute_hitbox(vec3_t* obb_min, vec3_t* obb_max);
 
-		__forceinline void on_sim_time_changing(float previous_simtime, float next_simtime);
-
 		__forceinline float& old_sim_time( );
 
 		__forceinline vec3_t& origin( );
@@ -224,6 +222,8 @@ namespace supremacy::valve {
 
 		__forceinline anim_state_t*& anim_state( );
 
+		__forceinline int& final_predicted_tick();
+
 		__forceinline bool& client_side_anim( );
 
 		__forceinline float get_sequence_cycle_rate(studio_hdr_t* studio_hdr, int sequence);
@@ -277,6 +277,8 @@ namespace supremacy::valve {
 		__forceinline e_move_type& move_type( );
 
 		__forceinline float& velocity_modifier( );
+
+		__forceinline float& fall_velocity();
 
 		__forceinline user_cmd_t*& cur_user_cmd( );
 

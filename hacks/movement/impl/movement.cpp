@@ -399,7 +399,7 @@ namespace supremacy::hacks {
 				return true;
 			}
 
-			goto CHANGE_MOVE;
+			goto change_move;
 		}
 
 		finalwishspeed = speed_2d - target_speed;
@@ -411,9 +411,7 @@ namespace supremacy::hacks {
 
 			return true;
 		}
-
-	CHANGE_MOVE:
-
+	change_move:
 		vec3_t dir{};
 		math::vector_angles(velocity *= -1.f, dir);
 
@@ -582,7 +580,7 @@ namespace supremacy::hacks {
 			? valve::e_buttons::in_move_left : valve::e_buttons::in_move_right;
 	}
 
-	void c_movement::peek_assistence(valve::user_cmd_t& user_cmd) {
+	void c_movement::peek_assistence(qangle_t& wish_angles, valve::user_cmd_t& user_cmd) {
 		if (!key_handler::check_key(sdk::g_config_system->peek_assistence_key, sdk::g_config_system->peek_assistence_key_style)) {
 			g_context->should_return() = false;
 			g_context->start_position() = vec3_t{};
@@ -615,35 +613,25 @@ namespace supremacy::hacks {
 			if (!g_context->should_return())
 				return;
 
-			auto current_position = valve::g_local_player->abs_origin();
-			auto difference = current_position - g_context->start_position();
+			const auto current_position = valve::g_local_player->abs_origin();
+			const auto difference = current_position - g_context->start_position();
 
-			if (difference.length() > 5.f) {
-				auto velocity = vec3_t(difference.x * cos(user_cmd.m_view_angles.y / 180.f * math::k_pi) + difference.y * sin(user_cmd.m_view_angles.y / 180.f * math::k_pi), difference.y * cos(user_cmd.m_view_angles.y / 180.f * math::k_pi) - difference.x * sin(user_cmd.m_view_angles.y / 180.f * math::k_pi), difference.z);
+			if (difference.length_2d() > 5.f) {
+				user_cmd.m_buttons &= ~valve::e_buttons::in_jump;
+				const auto chocked_ticks = (user_cmd.m_number % 2) != 1 ? (14 - valve::g_client_state->m_choked_cmds) : valve::g_client_state->m_choked_cmds;
+				const auto angle = math::calculate_angle(valve::g_local_player->abs_origin(), g_context->start_position());
 
-				if (difference.length_2d() < 50.f) {
-					user_cmd.m_move.x = -velocity.x * 20.f;
-					user_cmd.m_move.y = velocity.y * 20.f;
-				}
-				else if (difference.length_2d() < 100.f) {
-					user_cmd.m_move.x = -velocity.x * 10.f;
-					user_cmd.m_move.y = velocity.y * 10.f;
-				}
-				else if (difference.length_2d() < 150.f) {
-					user_cmd.m_move.x = -velocity.x * 5.f;
-					user_cmd.m_move.y = velocity.y * 5.f;
-				}
-				else if (difference.length_2d() < 250.f) {
-					user_cmd.m_move.x = -velocity.x * 2.f;
-					user_cmd.m_move.y = velocity.y * 2.f;
-				}
-				else {
-					user_cmd.m_move.x = -velocity.x;
-					user_cmd.m_move.y = velocity.y;
-				}				
+				wish_angles = angle;
+				user_cmd.m_move.x = 450.f - (1.2f * chocked_ticks);
+				user_cmd.m_move.y = 0.f;
 			}
 			else
-				g_context->should_return() = false;			
+				g_context->should_return() = false;	
+
+			rotate(
+				user_cmd, wish_angles,
+				valve::g_local_player->flags(), valve::g_local_player->move_type()
+			);
 		}
 	}
 

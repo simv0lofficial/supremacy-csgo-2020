@@ -32,7 +32,6 @@ namespace sdk {
 		std::vector<std::string> config_files;
 
 		// aimbot.
-		int weapon_selection;
 		bool enabled;
 		int enabled_key;
 		int enabled_key_style;
@@ -71,10 +70,9 @@ namespace sdk {
 		int safe_point_key_style = 1;
 		int safe_point_type;
 		int max_misses_safe_point;
-		bool double_tap;
+		int double_tap;
 		int double_tap_key;
 		int double_tap_key_style = 2;
-		float recharge_delay = 0.3f;
 
 		// anti-aimbot angles.
 		bool enabled2;
@@ -95,6 +93,9 @@ namespace sdk {
 		int freestanding;	
 		int freestanding_key;
 		int freestanding_key_style;
+		int manual_left_key;
+		int manual_right_key;		
+		int manual_back_key;
 
 		// other.
 		bool fake_lag;		
@@ -131,7 +132,7 @@ namespace sdk {
 		bool skeleton;
 		float skeleton_color[4] = { 1.f, 1.f, 170 / 255.f, 1.f };
 		bool out_of_fow_arrow;
-		float out_of_fow_arrow_color[4] = { 255 / 255.f, 30 / 255.f, 30 / 255.f, 190 / 255.f };
+		float out_of_fow_arrow_color[4] = { 1.f, 30 / 255.f, 30 / 255.f, 190 / 255.f };
 
 		// colored models.		
 		bool player;
@@ -189,6 +190,7 @@ namespace sdk {
 		bool spectators;
 		bool penetration_reticle;		
 		std::unordered_map<int, bool> feature_indicators;
+		float manual_anti_aimbot_angles_color[4] = { 1.f, 45 / 255.f, 0.f, 180 / 255.f };
 
 		// effects.
 		bool remove_flashbang_effects;
@@ -215,7 +217,7 @@ namespace sdk {
 
 		// settings.		
 		int menu_key = VK_INSERT;
-		float menu_color[4] = { 255 / 255.f, 45 / 255.f, 0.f, 179 / 255.f };
+		float menu_color[4] = { 1.f, 45 / 255.f, 0.f, 180 / 255.f };
 		bool menu_watermark = true;
 
 		// movement.		
@@ -250,10 +252,14 @@ namespace sdk {
 		std::unordered_map<int, bool> equipment;
 		int auto_buy_minimal_money = 16000;
 
-		// extra.		
+		// extra.
 		bool infinite_duck;
 		int fake_duck_key;
 		int fake_duck_key_style = 1;
+		int radio_key;
+		int radio_key_style = 2;
+		int volume = 50;
+		int channel;
 	
 	public:
 		struct skin_info {

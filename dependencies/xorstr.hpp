@@ -37,6 +37,11 @@
 #define xorstr_(str) xorstr(str).crypt_get()
 #endif
 
+#define xorstr__(s) []() -> std::pair<std::string, char> { \
+	constexpr auto key = random::_char<__COUNTER__>::value; \
+	return std::make_pair(xorstr<sizeof(s), key>(s, std::make_index_sequence<sizeof(s)>()).ot(false), key); \
+}()
+
 #ifdef _MSC_VER
 #define XORSTR_FORCEINLINE __forceinline
 #else

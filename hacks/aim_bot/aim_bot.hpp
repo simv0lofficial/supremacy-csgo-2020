@@ -7,14 +7,15 @@ namespace supremacy::hacks {
 		__forceinline extrapolation_data_t(
 			valve::c_player* const player, const lag_record_t* const lag_record
 		) : m_player{ player }, m_sim_time{ lag_record->m_sim_time }, m_flags{ lag_record->m_flags },
-			m_origin{ lag_record->m_origin }, m_velocity{ lag_record->m_velocity },
-			m_obb_min{ lag_record->m_obb_min }, m_obb_max{ lag_record->m_obb_max } {}
+			m_was_in_air{ !(lag_record->m_flags & valve::e_ent_flags::on_ground) }, m_origin{ lag_record->m_origin },
+			m_velocity{ lag_record->m_velocity }, m_obb_min{ lag_record->m_obb_min }, m_obb_max{ lag_record->m_obb_max } {}
 
 		valve::c_player* m_player{};
 
 		float				m_sim_time{};
 
 		valve::e_ent_flags	m_flags{};
+		bool				m_was_in_air{};
 
 		vec3_t				m_origin{}, m_velocity{},
 			m_obb_min{}, m_obb_max{};
@@ -35,7 +36,7 @@ namespace supremacy::hacks {
 		pen_data_t	m_pen_data{};
 		bool		m_center{}, m_valid{};
 		int			m_intersections{},
-			m_intersections_low{},
+			m_low_intersections{},
 			m_hitbox{}, m_hitgroup{},
 			m_needed_intersections{};
 	};
@@ -73,12 +74,6 @@ namespace supremacy::hacks {
 	private:
 		std::size_t calc_points_count(const int hitgroups, const int multi_points) const;
 	public:
-		struct scan_point_data {
-			aim_target_t target;
-			aim_point_t point;
-			bool ignore_dmg;
-		};
-		static void scan_point_mt(scan_point_data* data);
 		void scan_point(const aim_target_t& target, aim_point_t& point, const bool ignore_dmg) const;
 	private:
 		void scan_center_points(aim_target_t& target, const int hitgroups) const;
@@ -100,7 +95,8 @@ namespace supremacy::hacks {
 		) const;
 
 		void scan_points(
-			aim_target_t& target, const int hitgroups, const int multi_points, const bool trace
+			aim_target_t& target, const int hitgroups, const int multi_points,
+			const bool trace, const bool ignore_dmg
 		) const;
 
 		bool select_points(aim_target_t& target) const;

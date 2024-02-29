@@ -4362,9 +4362,9 @@ bool ui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
                         window->DrawList->AddRect(window->Pos + ImVec2(6 + 5, 6 + 18), window->Pos + ImVec2(window->Size.x - 8 - 6 + 2, 8 + 18), ImColor(settings::m_menu_color[0], settings::m_menu_color[1], settings::m_menu_color[2],  settings::m_stored_alpha));
                         window->DrawList->AddRect(window->Pos + ImVec2(6 + 5, 7 + 18), window->Pos + ImVec2(window->Size.x - 8 - 6 + 2, 8 + 18), ImColor(0.f, 0.f, 0.f, ImClamp(58 / 255.f, 0.f, settings::m_stored_alpha)));
 
-                        window->DrawList->AddRectFilled(window->Pos + ImVec2(6 + 5, 7 + 18 + 30 + 30 - 18 - 35), window->Pos + ImVec2(window->Size.x - 8 - 6 + 2, window->Size.y - 8 + 18 + 19 - 42), ImColor(0.051f, 0.051f, 0.051f, ImClamp(255 / 255.f, 0.f,  settings::m_stored_alpha)));
-                        window->DrawList->AddRect(window->Pos + ImVec2(6 + 5, 7 + 18 + 30 + 30 - 18 - 35), window->Pos + ImVec2(window->Size.x - 8 - 6 + 2, window->Size.y - 8 + 18 + 19 - 42), ImColor(0.f, 0.f, 0.f, ImClamp(255 / 255.f, 0.f,  settings::m_stored_alpha)));
-                        window->DrawList->AddRect(window->Pos + ImVec2(6 + 5 + 1, 7 + 18 + 30 + 30 - 18 + 1 - 35), window->Pos + ImVec2(window->Size.x - 8 - 6 + 2 - 1, window->Size.y - 8 + 18 + 19 - 1 - 42), ImColor(0.20f, 0.20f, 0.20f, ImClamp(255 / 255.f, 0.f,  settings::m_stored_alpha)));
+                        window->DrawList->AddRectFilled(window->Pos + ImVec2(6 + 5, 7 + 18 + 30 + 30 - 18 - 35), window->Pos + ImVec2(window->Size.x - 8 - 6 + 2, window->Size.y - 8 + 18 + 19 - 42), ImColor(0.051f, 0.051f, 0.051f, ImClamp(1.f, 0.f,  settings::m_stored_alpha)));
+                        window->DrawList->AddRect(window->Pos + ImVec2(6 + 5, 7 + 18 + 30 + 30 - 18 - 35), window->Pos + ImVec2(window->Size.x - 8 - 6 + 2, window->Size.y - 8 + 18 + 19 - 42), ImColor(0.f, 0.f, 0.f, ImClamp(1.f, 0.f,  settings::m_stored_alpha)));
+                        window->DrawList->AddRect(window->Pos + ImVec2(6 + 5 + 1, 7 + 18 + 30 + 30 - 18 + 1 - 35), window->Pos + ImVec2(window->Size.x - 8 - 6 + 2 - 1, window->Size.y - 8 + 18 + 19 - 1 - 42), ImColor(0.20f, 0.20f, 0.20f, ImClamp(1.f, 0.f,  settings::m_stored_alpha)));
                     }
                     else
                     {
@@ -4395,9 +4395,9 @@ bool ui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
                     
                         window->DrawList->AddRect(window->Pos + ImVec2(6 + 5, 6 + 18), window->Pos + ImVec2(window->Size.x - 8 - 6 + 2, 8 + 18), ImColor(settings::m_menu_color[0], settings::m_menu_color[1], settings::m_menu_color[2], g.Style.Alpha));
                         window->DrawList->AddRect(window->Pos + ImVec2(6 + 5, 7 + 18), window->Pos + ImVec2(window->Size.x - 8 - 6 + 2, 8 + 18), ImColor(0.f, 0.f, 0.f, ImClamp(58 / 255.f, 0.f, g.Style.Alpha)));
-                        window->DrawList->AddRectFilled(window->Pos + ImVec2(6 + 5, 7 + 18 + 30 + 30 - 18), window->Pos + ImVec2(window->Size.x - 8 - 6 + 2, window->Size.y - 8 + 18 + 19 - 42), ImColor(0.051f, 0.051f, 0.051f, ImClamp(255 / 255.f, 0.f, g.Style.Alpha)));
-                        window->DrawList->AddRect(window->Pos + ImVec2(6 + 5, 7 + 18 + 30 + 30 - 18), window->Pos + ImVec2(window->Size.x - 8 - 6 + 2, window->Size.y - 8 + 18 + 19 - 42), ImColor(0.f, 0.f, 0.f, ImClamp(255 / 255.f, 0.f, g.Style.Alpha)));
-                        window->DrawList->AddRect(window->Pos + ImVec2(6 + 5 + 1, 7 + 18 + 30 + 30 - 18 + 1), window->Pos + ImVec2(window->Size.x - 8 - 6 + 2 - 1, window->Size.y - 8 + 18 + 19 - 1 - 42), ImColor(0.20f, 0.20f, 0.20f, ImClamp(255 / 255.f, 0.f, g.Style.Alpha)));
+                        window->DrawList->AddRectFilled(window->Pos + ImVec2(6 + 5, 7 + 18 + 30 + 30 - 18), window->Pos + ImVec2(window->Size.x - 8 - 6 + 2, window->Size.y - 8 + 18 + 19 - 42), ImColor(0.051f, 0.051f, 0.051f, ImClamp(1.f, 0.f, g.Style.Alpha)));
+                        window->DrawList->AddRect(window->Pos + ImVec2(6 + 5, 7 + 18 + 30 + 30 - 18), window->Pos + ImVec2(window->Size.x - 8 - 6 + 2, window->Size.y - 8 + 18 + 19 - 42), ImColor(0.f, 0.f, 0.f, ImClamp(1.f, 0.f, g.Style.Alpha)));
+                        window->DrawList->AddRect(window->Pos + ImVec2(6 + 5 + 1, 7 + 18 + 30 + 30 - 18 + 1), window->Pos + ImVec2(window->Size.x - 8 - 6 + 2 - 1, window->Size.y - 8 + 18 + 19 - 1 - 42), ImColor(0.20f, 0.20f, 0.20f, ImClamp(1.f, 0.f, g.Style.Alpha)));
 
                     }
 				}

@@ -285,54 +285,57 @@ namespace math {
 	}
 
 	__forceinline bool line_vs_bb( const vec3_t& src, const vec3_t& dst, const vec3_t& min, const vec3_t& max ) {
-		float d1{}, d2{}, f{};
-		auto t1 = -1.f, t2 = 1.f;
+		auto inside = true;
+		char quadrant[3];
+		int i;
 
-		auto start_solid = true;
-
-		for ( size_t i{}; i < 6u; ++i ) {
-			if ( i >= 3 ) {
-				const auto j = i - 3u;
-
-				d1 = src[ j ] - max[ j ];
-				d2 = d1 + dst[ j ];
+		vec3_t candidate_plane;
+		for (i = 0; i < 3; i++) {
+			if (src[i] < min[i]) {
+				quadrant[i] = 1;
+				candidate_plane[i] = min[i];
+				inside = false;
+			}
+			else if (src[i] > max[i]) {
+				quadrant[i] = 0;
+				candidate_plane[i] = max[i];
+				inside = false;
 			}
 			else {
-				d1 = -src[ i ] + min[ i ];
-				d2 = d1 - dst[ i ];
-			}
-
-			if ( d1 > 0.0f
-				&& d2 > 0.0f )
-				return false;
-
-			if ( d1 <= 0.0f
-				&& d2 <= 0.0f )
-				continue;
-
-			if ( d1 > 0.f )
-				start_solid = false;
-
-			if ( d1 > d2 ) {
-				f = d1;
-
-				if ( f < 0.f )
-					f = 0.f;
-
-				f /= d1 - d2;
-
-				if ( f > t1 )
-					t1 = f;
-			}
-			else {
-				f = d1 / ( d1 - d2 );
-
-				if ( f < t2 )
-					t2 = f;
+				quadrant[i] = 2;
 			}
 		}
 
-		return start_solid || ( t1 < t2 && t1 >= 0.f );
+		if (inside)
+			return true;
+
+		vec3_t max_t;
+		for (i = 0; i < 3; i++) {
+			if (quadrant[i] != 2 && dst[i] != 0.f)
+				max_t[i] = (candidate_plane[i] - src[i]) / dst[i];
+			else
+				max_t[i] = -1.f;
+		}
+
+		auto which_plane = 0;
+		for (i = 1; i < 3; i++) {
+			if (max_t[which_plane] < max_t[i])
+				which_plane = i;
+		}
+
+		if (max_t[which_plane] < 0.f)
+			return false;
+
+		for (i = 0; i < 3; i++) {
+			if (which_plane != i) {
+				float temp = src[i] + max_t[which_plane] * dst[i];
+				if (temp < min[i] || temp > max[i]) {
+					return false;
+				}				
+			}			
+		}
+
+		return true;
 	}
 
 	__forceinline bool to_screen( const vec3_t& world, const vec2_t& screen_size, const mat4x4_t& matrix, vec2_t& out ) {

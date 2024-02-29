@@ -4,14 +4,13 @@
 
 namespace supremacy::hacks {
 	__forceinline lag_backup_t::lag_backup_t(valve::c_player* const player) {
-		if (const auto anim_state = player->anim_state())
-			m_foot_yaw = anim_state->m_foot_yaw;
-
 		m_origin = player->origin();
 		m_abs_origin = player->abs_origin();
 
 		m_obb_min = player->obb_min();
 		m_obb_max = player->obb_max();
+
+		m_abs_angles = player->abs_angles();
 
 		const auto& bone_accessor = player->bone_accessor();
 
@@ -38,7 +37,7 @@ namespace supremacy::hacks {
 
 		player->set_collision_bounds(m_obb_min, m_obb_max);
 
-		player->set_abs_angles({ 0.f, m_foot_yaw, 0.f });
+		player->set_abs_angles(m_abs_angles);
 
 		auto& bone_accessor = player->bone_accessor();
 
@@ -62,9 +61,9 @@ namespace supremacy::hacks {
 			player->set_collision_bounds(m_obb_min, m_obb_max);
 		}
 
-		const auto& anim_side = anim_index < 3 ? m_sides.at(anim_index) : m_sides_low.at(anim_index - 3);
+		const auto& anim_side = anim_index < 3 ? m_sides.at(anim_index) : m_low_sides.at(anim_index - 3);
 
-		player->set_abs_angles({ 0.f, anim_side.m_foot_yaw, 0.f });
+		player->set_abs_angles(anim_side.m_abs_angles);
 
 		std::memcpy(
 			player->bone_cache().m_mem.m_ptr,
@@ -77,6 +76,12 @@ namespace supremacy::hacks {
 	}
 
 	__forceinline bool lag_record_t::valid() const {
+		if (!g_context->cvars().m_cl_lagcompensation->get_bool())
+			return true;
+
+		if (m_shifting)
+			return false;
+
 		if (g_lag_comp->calc_time_delta(m_sim_time) > 0.2f)
 			return false;
 
@@ -86,20 +91,19 @@ namespace supremacy::hacks {
 		if (g_movement->should_fake_duck())
 			delay = 15 - valve::g_client_state->m_choked_cmds;
 
-		const auto dead_time = static_cast<int>(valve::to_time(net_info.m_server_tick + delay) - g_context->cvars().m_sv_maxunlag->get_float());
-		return m_sim_time >= dead_time;
+		return m_sim_time >= static_cast<int>(valve::to_time(net_info.m_server_tick + delay) - g_context->cvars().m_sv_maxunlag->get_float());
 	}
 
 	__forceinline void player_entry_t::reset() {
 		m_player = nullptr;
 
-		m_alive_loop_cycle = -1.f;
-
+		m_last_valid_time = -1.f;
 		m_server_rate = 0.f;
 		m_negative_rate = 0.f;
 		m_positive_rate = 0.f;
+		m_low_negative_rate = 0.f;
+		m_low_positive_rate = 0.f;
 		m_zero_rate = 0.f;
-		m_negative_delta = false;
 		m_render_origin = {};
 		m_misses = 0;
 		m_prev_side = 0;
@@ -115,13 +119,8 @@ namespace supremacy::hacks {
 	__forceinline float c_lag_comp::calc_time_delta(const float sim_time) const {
 		const auto& net_info = g_context->net_info();
 
-		const auto latency = std::clamp(
-			net_info.m_latency.m_in + net_info.m_latency.m_out
-			, 0.f, 1.f
-		);
-
 		const auto correct = std::clamp(
-			latency + net_info.m_lerp,
+			net_info.m_lerp + net_info.m_latency.m_in + net_info.m_latency.m_out,
 			0.f, g_context->cvars().m_sv_maxunlag->get_float()
 		);
 
