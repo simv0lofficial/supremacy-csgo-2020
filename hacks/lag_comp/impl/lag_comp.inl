@@ -4,13 +4,14 @@
 
 namespace supremacy::hacks {
 	__forceinline lag_backup_t::lag_backup_t(valve::c_player* const player) {
+		if (const auto anim_state = player->anim_state())
+			m_foot_yaw = anim_state->m_foot_yaw;
+
 		m_origin = player->origin();
 		m_abs_origin = player->abs_origin();
 
 		m_obb_min = player->obb_min();
 		m_obb_max = player->obb_max();
-
-		m_abs_angles = player->abs_angles();
 
 		const auto& bone_accessor = player->bone_accessor();
 
@@ -26,8 +27,6 @@ namespace supremacy::hacks {
 		);
 
 		m_bones_count = bone_cache.m_size;
-
-		m_mdl_bone_counter = player->mdl_bone_counter();
 	}
 
 	__forceinline void lag_backup_t::restore(valve::c_player* const player) const {
@@ -37,7 +36,7 @@ namespace supremacy::hacks {
 
 		player->set_collision_bounds(m_obb_min, m_obb_max);
 
-		player->set_abs_angles(m_abs_angles);
+		player->set_abs_angles({ 0.f, m_foot_yaw, 0.f });
 
 		auto& bone_accessor = player->bone_accessor();
 
@@ -48,8 +47,6 @@ namespace supremacy::hacks {
 			player->bone_cache().m_mem.m_ptr,
 			m_bones.data(), m_bones_count * sizeof(mat3x4_t)
 		);
-
-		player->mdl_bone_counter() = m_mdl_bone_counter;
 	}
 
 	__forceinline void lag_record_t::restore(valve::c_player* const player, const int anim_index, const bool only_anim) const {
@@ -63,16 +60,12 @@ namespace supremacy::hacks {
 
 		const auto& anim_side = anim_index < 3 ? m_sides.at(anim_index) : m_low_sides.at(anim_index - 3);
 
-		player->set_abs_angles(anim_side.m_abs_angles);
+		player->set_abs_angles({ 0.f, anim_side.m_foot_yaw, 0.f });
 
 		std::memcpy(
 			player->bone_cache().m_mem.m_ptr,
 			anim_side.m_bones.data(), anim_side.m_bones_count * sizeof(mat3x4_t)
 		);
-
-		player->mdl_bone_counter() = **reinterpret_cast<unsigned long**>(
-			g_context->addresses().m_invalidate_bone_cache + 0xau
-			);
 	}
 
 	__forceinline bool lag_record_t::valid() const {
@@ -91,13 +84,17 @@ namespace supremacy::hacks {
 		if (g_movement->should_fake_duck())
 			delay = 15 - valve::g_client_state->m_choked_cmds;
 
-		return m_sim_time >= static_cast<int>(valve::to_time(net_info.m_server_tick + delay) - g_context->cvars().m_sv_maxunlag->get_float());
+		int dead_time = (int)(valve::to_time(net_info.m_server_tick + delay) - g_context->cvars().m_sv_maxunlag->get_float());
+		if (m_sim_time < (float)dead_time)
+			return false;
+
+		return true;
 	}
 
 	__forceinline void player_entry_t::reset() {
 		m_player = nullptr;
 
-		m_last_valid_time = -1.f;
+		m_highest_simtime = -1.f;
 		m_server_rate = 0.f;
 		m_negative_rate = 0.f;
 		m_positive_rate = 0.f;

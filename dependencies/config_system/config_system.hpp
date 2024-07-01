@@ -32,6 +32,7 @@ namespace sdk {
 		std::vector<std::string> config_files;
 
 		// aimbot.
+		int weapon_selection;
 		bool enabled;
 		int enabled_key;
 		int enabled_key_style;
@@ -70,7 +71,7 @@ namespace sdk {
 		int safe_point_key_style = 1;
 		int safe_point_type;
 		int max_misses_safe_point;
-		int double_tap;
+		bool double_tap;
 		int double_tap_key;
 		int double_tap_key_style = 2;
 

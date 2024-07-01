@@ -101,8 +101,6 @@ namespace supremacy::hacks {
 		if (!anim_state)
 			return;
 
-		valve::g_local_player->set_abs_angles({ 0.f, anim_state->m_foot_yaw, 0.f });
-
 		auto& bones = g_anim_sync->local_data().m_shoot_pos_bones;
 		g_anim_sync->setup_bones(valve::g_local_player, bones, valve::g_global_vars->m_cur_time, 15);
 

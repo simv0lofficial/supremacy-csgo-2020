@@ -111,22 +111,61 @@ namespace supremacy::hacks {
 		const auto hitbox_set = target.m_entry->m_player->mdl_data()->m_studio_hdr->hitbox_set(target.m_entry->m_player->hitbox_set_index());
 		const auto hitbox = hitbox_set->hitbox(point.m_hitbox);
 
-		if (intersect(shoot_pos, point.m_pos, hitbox, zero_bones[hitbox->m_bone])) {
+		for (int i{}; i < hitbox_set->m_hitboxes_count; ++i) {
+			const auto hitbox = hitbox_set->hitbox(i);
+			if (!hitbox
+				|| !intersect(shoot_pos, point.m_pos, hitbox, zero_bones[hitbox->m_bone]))
+				continue;
+
 			++point.m_intersections;
 			++point.m_low_intersections;
+
+			break;
 		}
 
-		if (intersect(shoot_pos, point.m_pos, hitbox, negative_bones[hitbox->m_bone]))
+		for (int i{}; i < hitbox_set->m_hitboxes_count; ++i) {
+			const auto hitbox = hitbox_set->hitbox(i);
+			if (!hitbox
+				|| !intersect(shoot_pos, point.m_pos, hitbox, negative_bones[hitbox->m_bone]))
+				continue;
+
 			++point.m_intersections;
 
-		if (intersect(shoot_pos, point.m_pos, hitbox, positive_bones[hitbox->m_bone]))
+			break;
+		}
+
+		for (int i{}; i < hitbox_set->m_hitboxes_count; ++i) {
+			const auto hitbox = hitbox_set->hitbox(i);
+			if (!hitbox
+				|| !intersect(shoot_pos, point.m_pos, hitbox, positive_bones[hitbox->m_bone]))
+				continue;
+
 			++point.m_intersections;
 
-		if (intersect(shoot_pos, point.m_pos, hitbox, low_negative_bones[hitbox->m_bone]))
+			break;
+		}
+
+		for (int i{}; i < hitbox_set->m_hitboxes_count; ++i) {
+			const auto hitbox = hitbox_set->hitbox(i);
+			if (!hitbox
+				|| !intersect(shoot_pos, point.m_pos, hitbox, low_negative_bones[hitbox->m_bone]))
+				continue;
+
 			++point.m_low_intersections;
 
-		if (intersect(shoot_pos, point.m_pos, hitbox, low_positive_bones[hitbox->m_bone]))
+			break;
+		}
+
+		for (int i{}; i < hitbox_set->m_hitboxes_count; ++i) {
+			const auto hitbox = hitbox_set->hitbox(i);
+			if (!hitbox
+				|| !intersect(shoot_pos, point.m_pos, hitbox, low_positive_bones[hitbox->m_bone]))
+				continue;
+
 			++point.m_low_intersections;
+
+			break;
+		}
 	
 		point.m_valid = point.m_intersections >= point.m_needed_intersections;
 	}
@@ -900,11 +939,32 @@ namespace supremacy::hacks {
 			|| hitbox_set->m_hitboxes_count <= 0)
 			return std::nullopt;
 
-		const auto& latest = entry.m_lag_records.back();
-		if (latest->m_broke_lc
-			|| !g_context->cvars().m_cl_lagcompensation->get_bool())
+		if (!g_context->cvars().m_cl_lagcompensation->get_bool())
 			return extrapolate(entry);
-	
+
+		const auto& latest = entry.m_lag_records.back();
+		if (latest->m_broke_lc)	{
+			int delay{};
+
+			if (g_movement->should_fake_duck())
+				delay = 15 - valve::g_client_state->m_choked_cmds;
+
+			const auto v17 = std::clamp(
+				valve::to_ticks(
+					(
+						(valve::to_time(delay) + g_context->net_info().m_latency.m_out)
+						+ valve::g_global_vars->m_real_time
+						) - entry.m_receive_time
+				),
+				0, 100
+			);
+
+			if ((v17 - valve::to_ticks(latest->m_sim_time - latest->m_old_sim_time)) >= 0)
+				return std::nullopt;
+
+			return extrapolate(entry);
+		}
+			
 		if (entry.m_lag_records.size() == 1u
 			|| !sdk::g_config_system->lag_compensation)
 			return select_latest_record(entry);
@@ -928,9 +988,9 @@ namespace supremacy::hacks {
 
 		std::optional< aim_point_t > best_point{};
 		std::shared_ptr< lag_record_t > best_record{};
+		std::size_t valid_records_count{}, scanned_count{};
 		lag_backup_t lag_backup{ entry.m_player };
 
-		std::size_t valid_records_count{}, scanned_count{};
 		for (auto i = entry.m_lag_records.rbegin(); i != entry.m_lag_records.rend(); i = std::next(i)) {
 			const auto& lag_record = *i;
 
@@ -1072,11 +1132,6 @@ namespace supremacy::hacks {
 		}
 
 		lag_backup.restore(entry.m_player);
-
-		// note: simv0l - r u srsly reis??
-		/*if (!best_record
-			&& !valid_records_count)
-			return extrapolate(entry);*/
 
 		if (!best_record)
 			return std::nullopt;
@@ -1384,11 +1439,13 @@ namespace supremacy::hacks {
 
 		m_is_peeking = peek_correction();
 
+		const auto item_index = g_context->weapon()->item_index();
+
 		if (!(sdk::g_config_system->enabled
 			&& key_handler::check_key(sdk::g_config_system->enabled_key, sdk::g_config_system->enabled_key_style)
 			) || g_context->weapon()->in_reload()
 			|| (static_cast<std::size_t>(g_context->wpn_data()->m_unk_type - 2) > 5
-				&& g_context->weapon()->item_index() != valve::e_item_index::taser)
+				&& item_index != valve::e_item_index::taser)
 			|| valve::g_local_player->move_type() == valve::e_move_type::ladder
 			|| valve::g_local_player->move_type() == valve::e_move_type::noclip)
 			return;
@@ -1412,26 +1469,12 @@ namespace supremacy::hacks {
 
 		target->m_lag_record->restore(target->m_entry->m_player, target->m_lag_record->m_side);
 
-		auto angle = math::calculate_angle(g_context->shoot_pos(), point->m_pos);
-
-		const auto backup_pose_param = valve::g_local_player->pose_params().at(12u);
-
-		valve::g_local_player->pose_params().at(12u) = (std::clamp(std::remainder(
-			angle.x
-			- valve::g_local_player->aim_punch().x * g_context->cvars().m_weapon_recoil_scale->get_float(), 360.f
-		), -90.f, 90.f) + 90.f) / 180.f;
-
-		g_eng_pred->update_shoot_pos();
-
-		valve::g_local_player->pose_params().at(12u) = backup_pose_param;
-
-		angle = math::calculate_angle(g_context->shoot_pos(), point->m_pos);
-	
-		const auto item_index = g_context->weapon()->item_index();
 		if (sdk::g_config_system->quick_stop)
 			g_movement->stop_type() = ((g_context->flags() & e_context_flags::can_shoot) || sdk::g_config_system->between_shots) ? sdk::g_config_system->type + 1 : 0;
 
 		if (g_context->flags() & e_context_flags::can_shoot) {
+			const auto angle = math::calculate_angle(g_context->shoot_pos(), point->m_pos);
+
 			if (sdk::g_config_system->automatic_scope
 				&& (item_index == valve::e_item_index::g3sg1
 					|| item_index == valve::e_item_index::scar20

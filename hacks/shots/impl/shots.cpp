@@ -166,7 +166,7 @@ namespace supremacy::hacks {
 									new_anim_side = 3;
 								break;
 							case 3:
-								new_anim_side = 4;
+								new_anim_side = 2;
 								break;
 							case 4:
 								new_anim_side = 1;

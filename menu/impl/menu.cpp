@@ -119,6 +119,7 @@ namespace supremacy {
 			ui::SetNextWindowPos(posDouble(0));
 			ui::BeginChild("aimbot", child_size_d);
 			{
+				//ui::SingleSelect("weapon selection", &sdk::g_config_system->weapon_selection, { "pistols", "heavy pistols", "sub-machine guns", "rifles", "auto snipers", "scout", "awp", "shotguns", "machine guns", "taser" });
 				ui::Checkbox("enabled", &sdk::g_config_system->enabled);
 				ui::Keybind("##enabled_key", &sdk::g_config_system->enabled_key, &sdk::g_config_system->enabled_key_style);
 				ui::MultiSelect("target hitbox", &sdk::g_config_system->target_hitbox, { "head", "chest", "body", "arms", "legs", "feet" });
@@ -197,9 +198,7 @@ namespace supremacy {
 					if (sdk::g_config_system->safe_point_conditions[5])
 						ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->max_misses_safe_point, 1, 5, "%d miss");
 				}
-
-				// note: simv0l - defensive doubletap was removed in release version (i don't want break 2020 hvh)
-				ui::SingleSelect("double tap", &sdk::g_config_system->double_tap, { "off", "offensive", "defensive" });
+				ui::Checkbox("double tap", &sdk::g_config_system->double_tap);
 				ui::Keybind("##double_tap_key", &sdk::g_config_system->double_tap_key, &sdk::g_config_system->double_tap_key_style);
 			}
 			ui::EndChild();
@@ -498,14 +497,16 @@ namespace supremacy {
 			ui::SetNextWindowPos(ImVec2(ui::GetWindowPos().x - 4 + 26 + (ui::GetWindowSize().x / 2 - 36) * 1 + 20 * 1, ui::GetWindowPos().y + 52 + 27));
 			ui::BeginChild("scripts", ImVec2(ui::GetWindowSize().x / 2 - 36 + 4, ui::GetWindowSize().y - 80 - 27));
 			{
-
+				ui::Text("soon...");
 			}
 			ui::EndChild();
 		}
 
 		if (this->m_current_tab == 5)
 		{
+			//skins::get().menu();
 
+			//ui::EndChild();
 		}
 
 		ui::End();

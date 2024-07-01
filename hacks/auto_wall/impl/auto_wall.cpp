@@ -1,14 +1,15 @@
 #include "../../../supremacy.hpp"
 
-namespace supremacy::hacks {
+namespace supremacy::hacks
+{
 	bool c_auto_wall::trace_to_exit(
 		const vec3_t& src, const vec3_t& dir,
 		const valve::trace_t& enter_trace, valve::trace_t& exit_trace
-	) const {
+	) const
+	{
 		float dist{};
 		valve::e_mask first_contents{};
-		auto is_window = 0;
-		auto flag = 0;
+
 		constexpr auto k_step_size = 4.f;
 		constexpr auto k_max_dist = 90.f;
 
@@ -44,47 +45,6 @@ namespace supremacy::hacks {
 				continue;
 			}
 
-			auto name = (int*)enter_trace.m_surface.m_name;
-			if (name) {
-				if (*name == 1936744813u
-					&& name[1] == 1601397551u
-					&& name[2] == 1768318575u
-					&& name[3] == 1731159395u
-					&& name[4] == 1936941420u
-					&& name[5] == 1651668271u
-					&& name[6] == 1734307425u
-					&& name[7] == 1936941420u)
-					is_window = 1;
-				else {
-					is_window = 0;
-
-					if (*name != 1936744813u)
-						goto LABEL_34;
-				}
-
-				if (name[1] == 1600480303u
-					&& name[2] == 1701536108u
-					&& name[3] == 1634494255u
-					&& name[4] == 1731162995u
-					&& name[5] == 1936941420u)
-				{
-					flag = 1;
-
-				LABEL_35:
-					if (is_window || flag) {
-						exit_trace = enter_trace;
-						exit_trace.m_end_pos = out + dir;
-						return true;
-					}
-
-					goto LABEL_37;
-				}
-			LABEL_34:
-				flag = 0;
-				goto LABEL_35;
-			}
-
-		LABEL_37:
 			if (!exit_trace.hit()
 				|| exit_trace.m_start_solid) {
 				if (enter_trace.m_hit_entity
@@ -118,7 +78,8 @@ namespace supremacy::hacks {
 	void c_auto_wall::clip_trace_to_player(
 		const vec3_t& src, const vec3_t& dst, valve::trace_t& trace,
 		valve::c_player* const player, const valve::should_hit_fn_t& should_hit_fn
-	) const {
+	) const
+	{
 		if (should_hit_fn
 			&& !should_hit_fn(player, valve::e_mask::shot_player))
 			return;
@@ -152,7 +113,8 @@ namespace supremacy::hacks {
 		valve::c_player* const shooter, const valve::weapon_data_t* const wpn_data,
 		const valve::trace_t& enter_trace, vec3_t& src, const vec3_t& dir, int& pen_count,
 		float& cur_dmg, const float pen_modifier
-	) const {
+	) const
+	{
 		if (pen_count <= 0
 			|| wpn_data->m_penetration <= 0.f)
 			return false;
@@ -163,7 +125,7 @@ namespace supremacy::hacks {
 			&& !(valve::g_engine_trace->point_contents(enter_trace.m_end_pos, valve::e_mask::shot_hull) & valve::e_mask::shot_hull))
 			return false;
 
-		auto combined_dmg_modifier = 0.16f;
+		auto final_dmg_modifier = 0.16f;
 		float combined_pen_modifier{};
 
 		const auto exit_surface_data = valve::g_surface_data->find(exit_trace.m_surface.m_surface_props);
@@ -171,7 +133,7 @@ namespace supremacy::hacks {
 
 		if (enter_surface_data->m_game.m_material == 'G'
 			|| enter_surface_data->m_game.m_material == 'Y') {
-			combined_dmg_modifier = 0.05f;
+			final_dmg_modifier = 0.05f;
 			combined_pen_modifier = 3.f;
 		}
 		else if (enter_trace.m_contents & valve::e_mask::contents_grate
@@ -207,7 +169,7 @@ namespace supremacy::hacks {
 		const auto pen_dist = (exit_trace.m_end_pos - enter_trace.m_end_pos).length();
 
 		const auto lost_dmg =
-			cur_dmg * combined_dmg_modifier
+			cur_dmg * final_dmg_modifier
 			+ pen_modifier * (modifier * 3.f)
 			+ ((pen_dist * pen_dist) * modifier) / 24.f;
 
@@ -230,16 +192,13 @@ namespace supremacy::hacks {
 	void c_auto_wall::scale_dmg(
 		valve::c_player* const player, float& dmg,
 		const float armor_ratio, const int hitgroup
-	) const {
+	) const
+	{
 		const auto has_heavy_armor = player->has_heavy_armor();
 
 		switch (hitgroup) {
 		case 1:
-			dmg *= 4.f;
-
-			if (has_heavy_armor)
-				dmg *= 0.5f;
-
+			dmg *= has_heavy_armor ? 2.f: 4.f;
 			break;
 		case 3: dmg *= 1.25f; break;
 		case 6:
@@ -275,8 +234,9 @@ namespace supremacy::hacks {
 	pen_data_t c_auto_wall::fire_bullet(
 		valve::c_player* const shooter, valve::c_player* const target,
 		const valve::weapon_data_t* const wpn_data, const bool is_taser, vec3_t src, const vec3_t& dst
-	) const {
-		const auto pen_modifier = std::max(0.f, (3.f / wpn_data->m_penetration) * 1.25f);
+	) const
+	{
+		const auto pen_modifier = std::max((3.f / wpn_data->m_penetration) * 1.25f, 0.f);
 
 		float cur_dist{};
 
@@ -360,17 +320,18 @@ namespace supremacy::hacks {
 
 	pen_data_t c_auto_wall::fire_emulated(
 		valve::c_player* const shooter, valve::c_player* const target, vec3_t src, const vec3_t& dst
-	) const {
+	) const
+	{
 		static const auto wpn_data = []() {
-			valve::weapon_data_t wpn_data{};
+				valve::weapon_data_t wpn_data{};
 
-			wpn_data.m_dmg = 200;
-			wpn_data.m_range = 8192.f;
-			wpn_data.m_penetration = 6.f;
-			wpn_data.m_range_modifier = 1.f;
-			wpn_data.m_armor_ratio = 2.f;
+				wpn_data.m_dmg = 115;
+				wpn_data.m_range = 8192.f;
+				wpn_data.m_penetration = 2.5f;
+				wpn_data.m_range_modifier = 0.99f;
+				wpn_data.m_armor_ratio = 1.95f;
 
-			return wpn_data;
+				return wpn_data;
 			}();
 
 			const auto pen_modifier = std::max((3.f / wpn_data.m_penetration) * 1.25f, 0.f);

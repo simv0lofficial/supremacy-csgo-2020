@@ -199,11 +199,7 @@ namespace supremacy::hooks
 				util::g_notify->print_logo();
 				valve::g_cvar->con_print(0xffc0c0c0u, xorstr_("successfully injected\n"));
 				util::g_notify->print_logo();
-				valve::g_cvar->con_print(0xffc0c0c0u, xorstr_("press 'insert' to open the menu\n"));
-				util::g_notify->print_logo();
-				valve::g_cvar->con_print(0xffc0c0c0u, xorstr_("forum - supremacy.su\n"));
-				util::g_notify->print_logo();
-				valve::g_cvar->con_print(0xffc0c0c0u, xorstr_("vk group - vk.com/s1legendirl\n"));
+				valve::g_cvar->con_print(0xffc0c0c0u, xorstr_("press 'insert' to open the menu\n"));				
 				util::g_notify->print_logo();
 				valve::g_cvar->con_print(0xffc0c0c0u, xorstr_("telegram channel - t.me/s1legendirl\n"));
 				util::g_notify->print_logo();
@@ -802,6 +798,7 @@ namespace supremacy::hooks
 
 	void __stdcall frame_stage_notify(const valve::e_frame_stage stage) {
 		hacks::g_eng_pred->last_frame_stage() = stage;
+		g_context->cvars().m_cl_threaded_bone_setup->set_int(1);
 
 		if (!valve::g_local_player
 			|| !valve::g_engine->in_game())
@@ -1200,6 +1197,25 @@ namespace supremacy::hooks
 		return false;
 	}
 
+	bool __fastcall interpolate_viewmodel(valve::c_entity* const ecx, const std::uintptr_t edx, float time) {
+		if (valve::g_client_state->m_last_cmd_out != hacks::g_exploits->recharge_cmd())
+			return orig_interpolate_viewmodel(ecx, edx, time);
+
+		auto owner = valve::g_entity_list->find_entity(ecx->view_model_owner());
+		if (owner->index() != valve::g_local_player->index())
+			return orig_interpolate_viewmodel(ecx, edx, time);
+
+		const auto backup_lerp_amount = valve::g_global_vars->m_interpolation_amount;
+
+		valve::g_global_vars->m_interpolation_amount = 0.f;
+
+		const auto ret = orig_interpolate_viewmodel(ecx, edx, time);
+
+		valve::g_global_vars->m_interpolation_amount = backup_lerp_amount;
+
+		return ret;
+	}
+
 	bool __fastcall write_user_cmd_delta_to_buffer(
 		const std::uintptr_t ecx, const std::uintptr_t edx,
 		const int slot, valve::bf_write_t* const buffer,
@@ -1568,9 +1584,8 @@ namespace supremacy::hooks
 			if (player
 				&& player->alive()
 				&& player->dormant()) {
-				const vec3_t origin = vec3_t(data.m_x, data.m_y, data.m_z);
 				hacks::g_dormant_esp->m_sound_players[index - 1].m_receive_time = valve::g_global_vars->m_real_time;
-				hacks::g_dormant_esp->m_sound_players[index - 1].m_origin = origin;
+				hacks::g_dormant_esp->m_sound_players[index - 1].m_origin = vec3_t(data.m_x, data.m_y, data.m_z);
 			}
 		}	
 
