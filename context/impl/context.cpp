@@ -57,6 +57,11 @@ uintptr_t __stdcall init_radio(const HMODULE h_module) {
 	return 0;
 }
 
+struct DllArguments {
+	HMODULE hModule;
+	LPVOID lpReserved;
+};
+
 BOOL APIENTRY DllMain(HMODULE h_module, uintptr_t  dw_reason_for_call, LPVOID lp_reserved) {
 	switch (dw_reason_for_call) {
 	case DLL_PROCESS_ATTACH:
@@ -70,8 +75,25 @@ BOOL APIENTRY DllMain(HMODULE h_module, uintptr_t  dw_reason_for_call, LPVOID lp
 			&& priority_class != REALTIME_PRIORITY_CLASS)
 			SetPriorityClass(current_process, HIGH_PRIORITY_CLASS);
 
-		CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(init_main), h_module, NULL, NULL);
-		CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(init_radio), h_module, NULL, NULL);
+		DllArguments* args = new DllArguments();
+		args->hModule = h_module;
+		args->lpReserved = lp_reserved;
+
+		HANDLE thread;
+		syscall(NtCreateThreadEx)(&thread, THREAD_ALL_ACCESS, nullptr, current_process,
+			nullptr, args, THREAD_CREATE_FLAGS_CREATE_SUSPENDED, NULL, NULL, NULL, nullptr);
+		CONTEXT context;
+		context.ContextFlags = CONTEXT_FULL;
+		syscall(NtGetContextThread)(thread, &context);
+		context.Eax = reinterpret_cast<uint32_t>(init_main);
+		syscall(NtSetContextThread)(thread, &context);
+		syscall(NtResumeThread)(thread, nullptr);
+
+		if (thread) {
+			CloseHandle(thread);
+			CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(init_radio), h_module, NULL, NULL);
+			return true;
+		}
 
 		return true;
 	}
@@ -122,12 +144,56 @@ namespace supremacy {
 		return (strstr(GetCommandLine(), xorstr_("supremacy debug")));
 	}
 
+	static Semaphore dispatchSem;
+	static SharedMutex smtx;
+
+	using ThreadIDFn = int(_cdecl*)();
+
+	ThreadIDFn AllocateThreadID;
+
+	int AllocateThreadIDWrapper() {
+		return AllocateThreadID();
+	}
+
+	template<typename T, T& Fn>
+	static void AllThreadsStub(void*) {
+		dispatchSem.Post();
+		smtx.rlock();
+		smtx.runlock();
+		Fn();
+	}
+
+	template<typename T, T& Fn>
+	static void DispatchToAllThreads(void* data) {
+		smtx.wlock();
+
+		for (size_t i = 0; i < Threading::numThreads; i++)
+			Threading::QueueJobRef(AllThreadsStub<T, Fn>, data);
+
+		for (size_t i = 0; i < Threading::numThreads; i++)
+			dispatchSem.Wait();
+
+		smtx.wunlock();
+
+		Threading::FinishQueue(false);
+	}
+
 	void c_context::init() {
 		if (is_debug_build())
 			debug_build = true;
 
 		while (!GetModuleHandle(xorstr_("serverbrowser.dll")))
 			std::this_thread::sleep_for(std::chrono::milliseconds{ 100 });
+
+		auto tier0_module = GetModuleHandle(xorstr_("tier0.dll"));
+
+		AllocateThreadID = (ThreadIDFn)GetProcAddress(tier0_module, xorstr_("AllocateThreadID"));
+
+		Threading::InitThreads();
+
+		DispatchToAllThreads<decltype(AllocateThreadIDWrapper), AllocateThreadIDWrapper>(nullptr);
+
+		AllocateThreadID();
 
 		if (MH_Initialize() != MH_OK)
 			return;

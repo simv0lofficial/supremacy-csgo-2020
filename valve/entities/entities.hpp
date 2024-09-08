@@ -86,8 +86,6 @@ namespace supremacy::valve {
 
 		__forceinline vec3_t& obb_max( );
 
-		__forceinline const void update_collision_bounds();
-
 		__forceinline void set_collision_bounds(
 			const vec3_t& obb_min, const vec3_t& obb_max
 		);

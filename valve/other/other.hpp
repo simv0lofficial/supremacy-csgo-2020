@@ -706,7 +706,7 @@ namespace supremacy::valve {
 		render_end
 	};
 
-	using bones_t = std::array< mat3x4_t, 256u >;
+	using bones_t = std::array< mat3x4_t, 128u >;
 
 	struct ik_context_t {};
 

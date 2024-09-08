@@ -38,7 +38,7 @@ namespace supremacy::hacks {
 
 		const auto backup_in_prediction = valve::g_prediction->m_in_prediction;
 		const auto backup_first_time_predicted = valve::g_prediction->m_first_time_predicted;
-
+		
 		valve::g_prediction->m_in_prediction = true;
 		valve::g_prediction->m_first_time_predicted = false;
 
@@ -53,6 +53,8 @@ namespace supremacy::hacks {
 		valve::g_movement->process_movement(valve::g_local_player, &m_move_data);
 
 		valve::g_prediction->finish_move(valve::g_local_player, user_cmd, &m_move_data);
+
+		valve::g_local_player->velocity_modifier() = backup_velocity_modifier;
 
 		valve::g_movement->finish_track_prediction_errors(valve::g_local_player);
 
@@ -80,10 +82,8 @@ namespace supremacy::hacks {
 
 		m_local_data.at(user_cmd->m_number % 150).save(user_cmd->m_number);
 
-		valve::g_local_player->velocity_modifier() = backup_velocity_modifier;
-
 		valve::g_prediction->m_in_prediction = backup_in_prediction;
-		valve::g_prediction->m_first_time_predicted = backup_first_time_predicted;
+		valve::g_prediction->m_first_time_predicted = backup_first_time_predicted;		
 
 		update_shoot_pos();
 	}
@@ -101,6 +101,8 @@ namespace supremacy::hacks {
 		if (!anim_state)
 			return;
 
+		valve::g_local_player->set_abs_angles({ 0.f, anim_state->m_foot_yaw, 0.f });
+
 		auto& bones = g_anim_sync->local_data().m_shoot_pos_bones;
 		g_anim_sync->setup_bones(valve::g_local_player, bones, valve::g_global_vars->m_cur_time, 15);
 
@@ -108,20 +110,22 @@ namespace supremacy::hacks {
 
 		if (anim_state->m_player
 			&& (anim_state->m_landing || anim_state->m_duck_amount || anim_state->m_player->ground_entity() == valve::e_ent_handle::invalid)) {
-			const auto bone_index = valve::g_local_player->lookup_bone("head_0");
+			const auto bone_index = valve::g_local_player->lookup_bone(xorstr_("head_0"));
 			if (bone_index != -1) {
 				vec3_t head_pos{
 					bones[bone_index][0u][3u],
 					bones[bone_index][1u][3u],
-					bones[bone_index][2u][3u] + 1.7f
+					bones[bone_index][2u][3u]
 				};
 
-				if (eye_pos.z > head_pos.z) {
-					const auto v5 = std::abs(eye_pos.z - head_pos.z);
-					const auto v6 = std::max((v5 - 4.f) / 6.f, 0.f);
-					const auto v7 = std::min(v6, 1.f);
+				head_pos.z += 1.7f;
 
-					eye_pos.z += (((v7 * v7) * 3.f) - ((v7 + v7) * (v7 * v7))) * (head_pos.z - eye_pos.z);
+				if (eye_pos.z > head_pos.z) {
+					float v9 = 0.f;
+					float  v10 = (std::fabsf(eye_pos.z - head_pos.z) - 4.f) / 6.f;
+					if (v10 >= 0.f)
+						v9 = fminf(v10, 1.f);
+					eye_pos.z += ((head_pos.z - eye_pos.z) * (((v9 * v9) * 3.f) - (((v9 * v9) * 2.f) * v9)));
 				}
 			}
 		}

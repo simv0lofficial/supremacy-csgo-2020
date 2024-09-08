@@ -111,11 +111,6 @@ namespace supremacy::hooks
 		if (g_input->get_key_press(sdk::g_config_system->menu_key))
 			g_menu->set_menu_opened(!g_menu->is_menu_opened());
 
-		if (g_menu->m_is_opened
-			&& sdk::g_config_system->menu_key
-			&& g_input->get_key_press(VK_ESCAPE))
-			g_menu->set_menu_opened(false);
-
 		static bool initialized_renderer = false;
 
 		if (!initialized_renderer)
@@ -612,10 +607,7 @@ namespace supremacy::hooks
 
 			hacks::g_movement->normalize(user_cmd);
 
-			hacks::g_movement->rotate(
-				user_cmd, hacks::g_eng_pred->old_user_cmd().m_view_angles,
-				valve::g_local_player->flags(), valve::g_local_player->move_type()
-			);
+			hacks::g_movement->rotate(user_cmd, hacks::g_eng_pred->old_user_cmd().m_view_angles, valve::g_local_player->move_type());
 
 			if (g_context->flags() & e_context_flags::can_shoot
 				&& g_context->will_shoot(g_context->weapon(), user_cmd)) {
@@ -656,7 +648,7 @@ namespace supremacy::hooks
 							if (const auto player_info = valve::g_engine->player_info(aim_target.m_entry->m_player->index()); player_info.has_value()) {
 #ifdef ALPHA
 								util::g_notify->print_logo();
-								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("fired shot at %s (hc: %d | dmg: %d | aimed: %s | sp: %s | bt: %d | type: %d | side: %d | lc: %s | choked: %d | max body yaw: %.0f)\n"),
+								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("fired shot at %s (hc: %d | dmg: %d | aimed: %s | sp: %s | bt: %d | type: %d | side: %d | anim: %d | lc: %s | choked: %d)\n"),
 									player_info.value().m_name,
 									aim_target.m_hit_chance,
 									aim_target.m_dmg,
@@ -665,14 +657,14 @@ namespace supremacy::hooks
 									aim_target.m_lag_record->m_extrapolated ? std::min(0, -aim_target.m_lag_record->m_extrapolate_ticks) : std::max(0, (valve::g_global_vars->m_tick_count - valve::to_ticks(aim_target.m_lag_record->m_sim_time))),
 									aim_target.m_lag_record->m_type,
 									aim_target.m_lag_record->m_side,
+									aim_target.m_lag_record->m_processed_velocity,
 									util::bool_as_text(aim_target.m_lag_record->m_broke_lc),
-									aim_target.m_lag_record->m_sim_ticks - 1,
-									aim_target.m_lag_record->m_max_body_rotation
+									aim_target.m_lag_record->m_sim_ticks - 1
 								);
 #else
 #ifdef _DEBUG
 								util::g_notify->print_logo();
-								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("fired shot at %s (hc: %d | dmg: %d | aimed: %s | sp: %s | bt: %d | type: %d | side: %d | lc: %s | choked: %d | max body yaw: %.0f)\n"),
+								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("fired shot at %s (hc: %d | dmg: %d | aimed: %s | sp: %s | bt: %d | type: %d | side: %d | anim: %d | lc: %s | choked: %d)\n"),
 									player_info.value().m_name,
 									aim_target.m_hit_chance,
 									aim_target.m_dmg,
@@ -681,14 +673,14 @@ namespace supremacy::hooks
 									aim_target.m_lag_record->m_extrapolated ? std::min(0, -aim_target.m_lag_record->m_extrapolate_ticks) : std::max(0, (valve::g_global_vars->m_tick_count - valve::to_ticks(aim_target.m_lag_record->m_sim_time))),
 									aim_target.m_lag_record->m_type,
 									aim_target.m_lag_record->m_side,
+									aim_target.m_lag_record->m_processed_velocity,
 									util::bool_as_text(aim_target.m_lag_record->m_broke_lc),
-									aim_target.m_lag_record->m_sim_ticks - 1,
-									aim_target.m_lag_record->m_max_body_rotation
+									aim_target.m_lag_record->m_sim_ticks - 1
 								);
 #else
 								if (g_context->debug_build) {
 									util::g_notify->print_logo();
-									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("fired shot at %s (hc: %d | dmg: %d | aimed: %s | sp: %s | bt: %d | type: %d | side: %d | lc: %s | choked: %d | max body yaw: %.0f)\n"),
+									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("fired shot at %s (hc: %d | dmg: %d | aimed: %s | sp: %s | bt: %d | type: %d | side: %d | anim: %d | lc: %s | choked: %d)\n"),
 										player_info.value().m_name,
 										aim_target.m_hit_chance,
 										aim_target.m_dmg,
@@ -697,9 +689,9 @@ namespace supremacy::hooks
 										aim_target.m_lag_record->m_extrapolated ? std::min(0, -aim_target.m_lag_record->m_extrapolate_ticks) : std::max(0, (valve::g_global_vars->m_tick_count - valve::to_ticks(aim_target.m_lag_record->m_sim_time))),
 										aim_target.m_lag_record->m_type,
 										aim_target.m_lag_record->m_side,
+										aim_target.m_lag_record->m_processed_velocity,
 										util::bool_as_text(aim_target.m_lag_record->m_broke_lc),
-										aim_target.m_lag_record->m_sim_ticks - 1,
-										aim_target.m_lag_record->m_max_body_rotation
+										aim_target.m_lag_record->m_sim_ticks - 1
 									);
 								}
 #endif
@@ -750,17 +742,13 @@ namespace supremacy::hooks
 
 		if (!send_packet) {
 			auto& net_channel = valve::g_client_state->m_net_channel;
+			const auto backup_choked_packets = net_channel->m_choked_packets;
 
-			if (net_channel->m_choked_packets
-				&& !(net_channel->m_choked_packets % 4)) {
-				const auto backup_choked_packets = net_channel->m_choked_packets;
+			net_channel->m_choked_packets = 0;
+			net_channel->send_datagram(0);
+			--net_channel->m_out_seq_number;
 
-				net_channel->m_choked_packets = 0;
-				net_channel->send_datagram(0);
-				--net_channel->m_out_seq_number;
-
-				net_channel->m_choked_packets = backup_choked_packets;
-			}
+			net_channel->m_choked_packets = backup_choked_packets;
 		}
 		else {
 			g_context->broke_lc() = (valve::g_local_player->origin() - g_context->last_sent_origin()).length_2d_sqr() > 4096.f;
@@ -948,7 +936,7 @@ namespace supremacy::hooks
 			if (player == valve::g_local_player) {
 				std::memcpy(
 					bones, hacks::g_anim_sync->local_data().m_real.m_bones.data(),
-					std::min(max_bones, 0x100) * sizeof(mat3x4_t)
+					std::min(max_bones, 128) * sizeof(mat3x4_t)
 				);
 			}
 			else {
@@ -956,7 +944,7 @@ namespace supremacy::hooks
 
 				std::memcpy(
 					bones, entry.m_bones.data(),
-					std::min(max_bones, 0x100) * sizeof(mat3x4_t)
+					std::min(max_bones, 128) * sizeof(mat3x4_t)
 				);
 			}
 

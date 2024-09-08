@@ -9,8 +9,6 @@ namespace supremacy::hacks {
 			const int side
 		) const;
 
-		float get_max_body_rotation(valve::c_player* player) const;
-
 		void find_server_foot_yaw(
 			player_entry_t& entry, lag_record_t* const current,
 			lag_record_t* const previous, lag_record_t* const penultimate

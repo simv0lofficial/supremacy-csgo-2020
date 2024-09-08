@@ -282,12 +282,6 @@ namespace supremacy::valve {
 		);
 	}
 
-	__forceinline const void c_entity::update_collision_bounds() {
-		using fn_t = const void(__thiscall*)(decltype(this));
-
-		return (*reinterpret_cast<fn_t**>(this))[339u](this);
-	}
-
 	__forceinline void c_entity::set_collision_bounds(
 		const vec3_t& obb_min, const vec3_t& obb_max
 	) {

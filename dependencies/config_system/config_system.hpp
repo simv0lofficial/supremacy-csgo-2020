@@ -223,7 +223,7 @@ namespace sdk {
 
 		// movement.		
 		bool bunny_hop;
-		int air_strafe;
+		bool air_strafe;
 		bool slide_walk;
 		int slow_motion_key;
 		int slow_motion_key_style = 1;

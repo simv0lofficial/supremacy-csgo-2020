@@ -14,9 +14,9 @@ namespace util {
 
 	__forceinline const char* bool_as_text(bool b);
 
-	__forceinline std::string to_utf8( const std::wstring_view str );
+	__forceinline std::string to_utf8(const std::wstring_view str);
 
-	__forceinline std::wstring to_utf16( const std::string_view str );
+	__forceinline std::wstring to_utf16(const std::string_view str);
 
 	template< typename o = void*, typename i = void* >
 	__forceinline o force_cast(i in) {
@@ -85,7 +85,7 @@ namespace util {
 			return arr_base_color;
 		}
 
-		__forceinline unsigned long& u32() 
+		__forceinline unsigned long& u32()
 		{
 			unsigned char _color[4];
 			_color[0] = (unsigned char)(r);

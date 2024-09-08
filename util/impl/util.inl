@@ -1,6 +1,6 @@
 #pragma once
 
-namespace util {	
+namespace util {
 	__forceinline const char* translate_hitgroup(const int index) {
 		switch (index) {
 		case 0: return ("generic"); break;
@@ -42,32 +42,32 @@ namespace util {
 		return b ? "true" : "false";
 	}
 
-	__forceinline std::string to_utf8( const std::wstring_view str ) {
-		if ( str.empty( ) )
+	__forceinline std::string to_utf8(const std::wstring_view str) {
+		if (str.empty())
 			return {};
 
-		const auto len = WideCharToMultiByte( CP_UTF8, 0, str.data( ), str.size( ), 0, 0, 0, 0 );
+		const auto len = WideCharToMultiByte(CP_UTF8, 0, str.data(), str.size(), 0, 0, 0, 0);
 
 		std::string ret{};
 
-		ret.resize( len );
+		ret.resize(len);
 
-		WideCharToMultiByte( CP_UTF8, 0, str.data( ), str.size( ), ret.data( ), len, 0, 0 );
+		WideCharToMultiByte(CP_UTF8, 0, str.data(), str.size(), ret.data(), len, 0, 0);
 
 		return ret;
 	}
 
-	__forceinline std::wstring to_utf16( const std::string_view str ) {
-		if ( str.empty( ) )
+	__forceinline std::wstring to_utf16(const std::string_view str) {
+		if (str.empty())
 			return {};
 
-		const auto len = MultiByteToWideChar( CP_UTF8, 0, str.data( ), str.size( ), nullptr, 0 );
+		const auto len = MultiByteToWideChar(CP_UTF8, 0, str.data(), str.size(), nullptr, 0);
 
 		std::wstring ret{};
 
-		ret.resize( len );
+		ret.resize(len);
 
-		MultiByteToWideChar( CP_UTF8, 0, str.data( ), str.size( ), ret.data( ), len );
+		MultiByteToWideChar(CP_UTF8, 0, str.data(), str.size(), ret.data(), len);
 
 		return ret;
 	}

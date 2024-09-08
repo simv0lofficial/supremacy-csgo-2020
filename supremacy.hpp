@@ -55,6 +55,10 @@
 
 #include "dependencies/hash.hpp"
 #include "dependencies/xorstr.hpp"
+#include "dependencies/defs.hpp"
+#include "dependencies/threading/threading.hpp"
+#include "dependencies/threading/shared_mutex.hpp"
+#include "dependencies/syscall.hpp"
 
 #define JSON_NOEXCEPTION
 

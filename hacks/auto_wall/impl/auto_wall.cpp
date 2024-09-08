@@ -194,41 +194,65 @@ namespace supremacy::hacks
 		const float armor_ratio, const int hitgroup
 	) const
 	{
-		const auto has_heavy_armor = player->has_heavy_armor();
+		bool  has_heavy_armor;
+		int   armor;
+		float heavy_ratio, bonus_ratio, ratio, new_damage;
+
+		static auto is_armored = [](valve::c_player* const player, int armor, int hitgroup) {
+			if (armor <= 0)
+				return false;
+
+			if (hitgroup == 1 && player->has_helmet())
+				return true;
+
+			else if (hitgroup >= 2 && hitgroup <= 4)
+				return true;
+
+			return false;
+		};
+
+		has_heavy_armor = player->has_heavy_armor();
 
 		switch (hitgroup) {
 		case 1:
-			dmg *= has_heavy_armor ? 2.f: 4.f;
+			dmg *= 4.f;
 			break;
-		case 3: dmg *= 1.25f; break;
+
+		case 3:
+			dmg *= 1.25f;
+			break;
+
 		case 6:
 		case 7:
 			dmg *= 0.75f;
+			break;
 
+		default:
 			break;
 		}
 
-		const auto armor_value = player->armor_value();
-		if (!armor_value
-			|| hitgroup < 0
-			|| hitgroup > 5
-			|| (hitgroup == 1 && !player->has_helmet()))
-			return;
+		armor = player->armor_value();
 
-		auto heavy_ratio = 1.f, bonus_ratio = 0.5f, ratio = armor_ratio * 0.5f;
+		if (is_armored(player, armor, hitgroup)) {
+			heavy_ratio = 1.f;
+			bonus_ratio = 0.5f;
+			ratio = armor_ratio * 0.5f;
 
-		if (has_heavy_armor) {
-			ratio *= 0.2f;
-			heavy_ratio = 0.25f;
-			bonus_ratio = 0.33f;
+			if (has_heavy_armor) {
+				bonus_ratio = 0.33f;
+				ratio = armor_ratio * 0.25f;
+				heavy_ratio = 0.33f;
+
+				new_damage = (dmg * ratio) * 0.85f;
+			}
+			else
+				new_damage = dmg * ratio;
+
+			if (((dmg - new_damage) * (heavy_ratio * bonus_ratio)) > armor)
+				new_damage = dmg - (armor / bonus_ratio);
+
+			dmg = new_damage;
 		}
-
-		auto dmg_to_hp = dmg * ratio;
-
-		if (((dmg - dmg_to_hp) * (bonus_ratio * heavy_ratio)) > armor_value)
-			dmg -= armor_value / bonus_ratio;
-		else
-			dmg = dmg_to_hp;
 	}
 
 	pen_data_t c_auto_wall::fire_bullet(
@@ -253,7 +277,8 @@ namespace supremacy::hacks
 		valve::trace_t trace{};
 		valve::trace_filter_skip_two_entities_t trace_filter{};
 
-		valve::c_player* last_hit_player{};
+		trace_filter.m_ignore_entity0 = shooter;
+		trace_filter.m_ignore_entity1 = nullptr;
 
 		auto max_dist = wpn_data->m_range;
 
@@ -261,9 +286,6 @@ namespace supremacy::hacks
 			max_dist -= cur_dist;
 
 			const auto cur_dst = src + dir * max_dist;
-
-			trace_filter.m_ignore_entity0 = shooter;
-			trace_filter.m_ignore_entity1 = last_hit_player;
 
 			valve::g_engine_trace->trace_ray(
 				{ src, cur_dst }, valve::e_mask::shot_player,
@@ -296,12 +318,7 @@ namespace supremacy::hacks
 
 					return data;
 				}
-
-				last_hit_player =
-					is_player ? static_cast<valve::c_player*>(trace.m_hit_entity) : nullptr;
 			}
-			else
-				last_hit_player = nullptr;
 
 			if (is_taser
 				|| (cur_dist > 3000.f && wpn_data->m_penetration > 0.f))
@@ -350,16 +367,13 @@ namespace supremacy::hacks
 
 			valve::trace_t trace{};
 			valve::trace_filter_skip_two_entities_t trace_filter{};
-
-			valve::c_player* last_hit_player{};
+			trace_filter.m_ignore_entity0 = shooter;
+			trace_filter.m_ignore_entity1 = nullptr;
 
 			while (cur_dmg > 0.f) {
 				const auto dist_remaining = wpn_data.m_range - cur_dist;
 
 				const auto cur_dst = src + dir * dist_remaining;
-
-				trace_filter.m_ignore_entity0 = shooter;
-				trace_filter.m_ignore_entity1 = last_hit_player;
 
 				valve::g_engine_trace->trace_ray(
 					{ src, cur_dst }, valve::e_mask::shot_player,
@@ -386,12 +400,7 @@ namespace supremacy::hacks
 
 						return data;
 					}
-
-					last_hit_player =
-						is_player ? static_cast<valve::c_player*>(trace.m_hit_entity) : nullptr;
 				}
-				else
-					last_hit_player = nullptr;
 
 				if (cur_dist > 3000.f
 					&& wpn_data.m_penetration > 0.f)

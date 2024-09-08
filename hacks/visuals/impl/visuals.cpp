@@ -435,7 +435,7 @@ namespace supremacy::hacks {
 
 			screen_pos.y -= 7.f;
 
-			// todo: simv0l - fix icon for flashbang.
+			// todo: simv0l - fix flashbang icon.
 			add_text(
 				{ screen_pos.x + 1.f, screen_pos.y },
 				m_fonts.m_icons26, char_code_for_item_index(sim.m_index), 0xb431c0c5u, 3
@@ -2736,8 +2736,7 @@ namespace supremacy::hacks {
 		if (valve::g_local_player->alive()
 			&& sdk::g_config_system->force_third_person_alive
 			&& key_handler::check_key(sdk::g_config_system->third_person_key, sdk::g_config_system->third_person_key_style)
-			) {
-			
+			) {			
 			const auto view_angles = valve::g_engine->view_angles();
 			valve::g_input->m_camera_in_third_person = true;
 			valve::g_input->m_camera_offset = vec3_t(view_angles.x, view_angles.y, sdk::g_config_system->third_person_distance);

@@ -38,8 +38,8 @@ namespace supremacy::hacks {
 		void normalize(valve::user_cmd_t& user_cmd) const;
 
 		void rotate(
-			valve::user_cmd_t& user_cmd, const qangle_t& wish_angles,
-			const valve::e_ent_flags flags, const valve::e_move_type move_type
+			valve::user_cmd_t& user_cmd,
+			const qangle_t& wish_angles, const valve::e_move_type move_type
 		) const;
 
 		void peek_assistence(qangle_t& wish_angles, valve::user_cmd_t& user_cmd);

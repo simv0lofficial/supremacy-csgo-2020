@@ -194,7 +194,7 @@ namespace supremacy {
 					|| sdk::g_config_system->safe_point_conditions[6]
 					|| sdk::g_config_system->safe_point_conditions[7]
 					) {
-					ui::SingleSelect("type", &sdk::g_config_system->safe_point_type, { "normal", "strict" });
+					ui::SingleSelect("type", &sdk::g_config_system->safe_point_type, { "normal point", "strict point", "normal hitbox", "strict hitbox" });
 					if (sdk::g_config_system->safe_point_conditions[5])
 						ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->max_misses_safe_point, 1, 5, "%d miss");
 				}
@@ -331,7 +331,7 @@ namespace supremacy {
 
 				ui::Checkbox("weapon viewmodel", &sdk::g_config_system->weapon_viewmodel);
 				color_picker("##weapon_viewmodel_color", sdk::g_config_system->weapon_viewmodel_color);
-				if (sdk::g_config_system->weapons)
+				if (sdk::g_config_system->weapon_viewmodel_color)
 					ui::SingleSelect("##weapon_viewmodel_model", &sdk::g_config_system->weapon_viewmodel_model, { "regular", "solid", "glow", "metallic" });
 
 				ui::Checkbox("weapons", &sdk::g_config_system->weapons);
@@ -413,9 +413,6 @@ namespace supremacy {
 			{
 				ui::Text("menu key");
 				if (ui::Keybind("##menu_key", &sdk::g_config_system->menu_key))
-					if (sdk::g_config_system->menu_key == VK_ESCAPE
-						|| sdk::g_config_system->menu_key < VK_BACK)
-						sdk::g_config_system->menu_key = 0;				
 
 				ui::Text("menu color");
 				if (color_picker("##menu_color", sdk::g_config_system->menu_color, false)) {
@@ -432,7 +429,7 @@ namespace supremacy {
 			ui::BeginChild("movement", ImVec2(ui::GetWindowSize().x / 2 - 36 + 4, ui::GetWindowSize().y / 2 - 80 - 27 + 65 + 31 - 30 - 45 - 8 - 4 + 147));
 			{
 				ui::Checkbox("bunny hop", &sdk::g_config_system->bunny_hop);
-				ui::SingleSelect("air strafe", &sdk::g_config_system->air_strafe, { "none", "local view", "directional" });
+				ui::Checkbox("air strafe", &sdk::g_config_system->air_strafe);
 				ui::Checkbox("slide walk", &sdk::g_config_system->slide_walk);
 				ui::Text("slow motion");
 				ui::Keybind("##slow_motion_key", &sdk::g_config_system->slow_motion_key, &sdk::g_config_system->slow_motion_key_style);

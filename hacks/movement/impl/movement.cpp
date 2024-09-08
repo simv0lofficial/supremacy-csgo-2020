@@ -21,14 +21,14 @@ namespace supremacy::hacks {
 						else
 							mousedy = -1;
 					}
-					else 
-						mousedy = 1;					
+					else
+						mousedy = 1;
 				}
 				else
-					mousedy = 0x8000u;				
+					mousedy = 0x8000u;
 			}
 			else
-				mousedy = 0x7FFF;			
+				mousedy = 0x7FFF;
 
 			user_cmd.m_mouse_dy = mousedy;
 		}
@@ -47,13 +47,13 @@ namespace supremacy::hacks {
 							mousedx = -1;
 					}
 					else
-						mousedx = 1;					
+						mousedx = 1;
 				}
 				else
-					mousedx = 0x8000u;				
+					mousedx = 0x8000u;
 			}
 			else
-				mousedx = 0x7FFF;			
+				mousedx = 0x7FFF;
 
 			user_cmd.m_mouse_dx = mousedx;
 		}
@@ -246,34 +246,46 @@ namespace supremacy::hacks {
 
 	void c_movement::auto_strafe(valve::user_cmd_t& user_cmd) {
 		if (!sdk::g_config_system->air_strafe
-			|| (sdk::g_config_system->air_strafe != 2 && (user_cmd.m_move.x != 0.f || user_cmd.m_move.y != 0.f))
 			|| valve::g_local_player->flags() & valve::e_ent_flags::on_ground)
 			return;
 
 		const auto& velocity = valve::g_local_player->velocity();
+		const auto speed_2d = velocity.length_2d();
+		const auto ideal_strafe = std::min(90.f, math::to_deg(std::asin(15.f / speed_2d)));
 
 		auto wish_angles = user_cmd.m_view_angles;
 
-		if (sdk::g_config_system->air_strafe == 2
-			&& (user_cmd.m_move.x != 0.f || user_cmd.m_move.y != 0.f))
-			wish_angles.y = std::remainder(
-				wish_angles.y
-				+ std::remainder(
-					math::to_deg(
-						std::atan2(user_cmd.m_move.x, user_cmd.m_move.y)
-					) - 90.f, 360.f
-				), 360.f
-			);
+		float wish_dir{};
+		bool holding_w = user_cmd.m_buttons & valve::e_buttons::in_forward;
+		bool holding_a = user_cmd.m_buttons & valve::e_buttons::in_move_left;
+		bool holding_s = user_cmd.m_buttons & valve::e_buttons::in_back;
+		bool holding_d = user_cmd.m_buttons & valve::e_buttons::in_move_right;
 
-		user_cmd.m_move.x = user_cmd.m_move.y = 0.f;
+		if (holding_w) {
+			if (holding_a)
+				wish_dir += 45.f;
+			else if (holding_d)
+				wish_dir -= 45.f;
+		}
+		else if (holding_s) {
+			if (holding_a)
+				wish_dir += 135.f;
+			else if (holding_d)
+				wish_dir -= 135.f;
+			else
+				wish_dir += 180.f;
+		}
+		else if (holding_a)
+			wish_dir += 90.f;
+		else if (holding_d)
+			wish_dir -= 90.f;
 
-		const auto speed_2d = velocity.length_2d();
+		wish_angles.y = std::remainder(wish_angles.y + wish_dir, 360.f);
 
-		const auto ideal_strafe = std::min(90.f, math::to_deg(std::asin(15.f / speed_2d)));
-
-		const auto mult = m_strafe_switch ? 1.f : -1.f;
-
+		user_cmd.m_move.x = 0.f;
+		
 		m_strafe_switch = !m_strafe_switch;
+		const auto switch_value = m_strafe_switch ? 1.f : -1.f;
 
 		auto delta = std::remainder(wish_angles.y - m_prev_view_yaw, 360.f);
 		if (delta)
@@ -281,33 +293,27 @@ namespace supremacy::hacks {
 
 		delta = std::abs(delta);
 
-		if (delta >= 30.f
-			|| ideal_strafe >= delta) {
+		if (delta <= ideal_strafe
+			|| delta >= 30.f) {
 			const auto vel_angle = math::to_deg(std::atan2(velocity.y, velocity.x));
 			const auto vel_delta = std::remainder(wish_angles.y - vel_angle, 360.f);
 
-			if (speed_2d <= 15.f
-				|| ideal_strafe >= vel_delta) {
-				if (speed_2d <= 15.f
-					|| vel_delta >= -ideal_strafe) {
-					user_cmd.m_move.y = 450.f * mult;
-					wish_angles.y += ideal_strafe * mult;
+			if (vel_delta <= ideal_strafe || speed_2d <= 15.f) {
+				if (-ideal_strafe <= vel_delta || speed_2d <= 15.f) {
+					wish_angles.y += (ideal_strafe * switch_value);
+					user_cmd.m_move.y = 450.f * switch_value;
 				}
 				else {
-					user_cmd.m_move.y = 450.f;
 					wish_angles.y = vel_angle - ideal_strafe;
+					user_cmd.m_move.y = 450.f;
 				}
 			}
 			else {
-				user_cmd.m_move.y = -450.f;
 				wish_angles.y = vel_angle + ideal_strafe;
+				user_cmd.m_move.y = -450.f;
 			}
 
-			rotate(
-				user_cmd, wish_angles,
-				valve::g_local_player->flags(),
-				valve::g_local_player->move_type()
-			);
+			rotate(user_cmd, wish_angles, valve::g_local_player->move_type());
 		}
 	}
 
@@ -487,71 +493,47 @@ namespace supremacy::hacks {
 
 		user_cmd.m_move.x = std::clamp(user_cmd.m_move.x, -450.f, 450.f);
 		user_cmd.m_move.y = std::clamp(user_cmd.m_move.y, -450.f, 450.f);
-		user_cmd.m_move.z = std::clamp(user_cmd.m_move.z, -320.f, 320.f);	
+		user_cmd.m_move.z = std::clamp(user_cmd.m_move.z, -320.f, 320.f);
 	}
 
 	void c_movement::rotate(
-		valve::user_cmd_t& user_cmd, const qangle_t& wish_angles,
-		const valve::e_ent_flags flags, const valve::e_move_type move_type
+		valve::user_cmd_t& user_cmd,
+		const qangle_t& wish_angles, const valve::e_move_type move_type
 	) const {
-		vec3_t  move, move_2d;
-		float   delta, len;
-		qangle_t   move_angle;
-
-		if (user_cmd.m_view_angles.z != 0.f
-			&& !(flags & valve::e_ent_flags::on_ground))
-			user_cmd.m_move.y = 0.f;
-
-		move = { user_cmd.m_move.x, user_cmd.m_move.y, 0.f };
-
-		len = move.normalize();
-		if (!len)
-			return;
-
-		math::vector_angles(move, move_angle);
-
-		delta = (user_cmd.m_view_angles.y - wish_angles.y);
-
-		move_angle.y += delta;
-
-		math::angle_vectors(move_angle, &move_2d);
-
-		move_2d *= len;
-
-		user_cmd.m_buttons &= ~(
-			valve::e_buttons::in_forward
-			| valve::e_buttons::in_back
-			| valve::e_buttons::in_move_right
-			| valve::e_buttons::in_move_left
-			);
-
-		if (move_type == valve::e_move_type::ladder) {
-			if (user_cmd.m_view_angles.x >= 45.f && wish_angles.x < 45.f && std::abs(delta) <= 65.f)
-				move_2d.x = -move_2d.x;
-
-			user_cmd.m_move.x = move_2d.x;
-			user_cmd.m_move.y = move_2d.y;
-
-			if (std::abs(user_cmd.m_move.x) > 200.f)
-				user_cmd.m_buttons |=
-				user_cmd.m_move.x > 0.f
-				? valve::e_buttons::in_forward : valve::e_buttons::in_back;
-
-			if (std::abs(user_cmd.m_move.y) <= 200.f)
-				return;
-
-			user_cmd.m_buttons |=
-				user_cmd.m_move.y > 0.f
-				? valve::e_buttons::in_move_right : valve::e_buttons::in_move_left;
-
-			return;
-		}
-
-		if (user_cmd.m_view_angles.x < -90.f || user_cmd.m_view_angles.x > 90.f)
-			move_2d.x = -move_2d.x;
-
-		user_cmd.m_move.x = move_2d.x;
-		user_cmd.m_move.y = move_2d.y;
+		vec3_t view_fwd, view_right, view_up, cmd_fwd, cmd_right, cmd_up;
+		normalize(user_cmd);
+		math::angle_vectors(wish_angles, &view_fwd, &view_right, &view_up);
+		math::angle_vectors(user_cmd.m_view_angles, &cmd_fwd, &cmd_right, &cmd_up);
+		const auto v8 = sqrtf((view_fwd.x * view_fwd.x) + (view_fwd.y * view_fwd.y));
+		const auto v10 = sqrtf((view_right.x * view_right.x) + (view_right.y * view_right.y));
+		const auto v12 = sqrtf(view_up.z * view_up.z);
+		const vec3_t norm_view_fwd((1.f / v8) * view_fwd.x, (1.f / v8) * view_fwd.y, 0.f);
+		const vec3_t norm_view_right((1.f / v10) * view_right.x, (1.f / v10) * view_right.y, 0.f);
+		const vec3_t norm_view_up(0.f, 0.f, (1.f / v12) * view_up.z);
+		const auto v14 = sqrtf((cmd_fwd.x * cmd_fwd.x) + (cmd_fwd.y * cmd_fwd.y));
+		const auto v16 = sqrtf((cmd_right.x * cmd_right.x) + (cmd_right.y * cmd_right.y));
+		const auto v18 = sqrtf(cmd_up.z * cmd_up.z);
+		const vec3_t norm_cmd_fwd((1.f / v14) * cmd_fwd.x, (1.f / v14) * cmd_fwd.y, 0.f);
+		const vec3_t norm_cmd_right((1.f / v16) * cmd_right.x, (1.f / v16) * cmd_right.y, 0.f);
+		const vec3_t norm_cmd_up(0.f, 0.f, (1.f / v18) * cmd_up.z);
+		const auto v22 = norm_view_fwd.x * user_cmd.m_move.x;
+		const auto v26 = norm_view_fwd.y * user_cmd.m_move.x;
+		const auto v28 = norm_view_fwd.z * user_cmd.m_move.x;
+		const auto v24 = norm_view_right.x * user_cmd.m_move.y;
+		const auto v23 = norm_view_right.y * user_cmd.m_move.y;
+		const auto v25 = norm_view_right.z * user_cmd.m_move.y;
+		const auto v30 = norm_view_up.x * user_cmd.m_move.z;
+		const auto v27 = norm_view_up.z * user_cmd.m_move.z;
+		const auto v29 = norm_view_up.y * user_cmd.m_move.z;
+		user_cmd.m_move.x = ((((norm_cmd_fwd.x * v24) + (norm_cmd_fwd.y * v23)) + (norm_cmd_fwd.z * v25))
+			+ (((norm_cmd_fwd.x * v22) + (norm_cmd_fwd.y * v26)) + (norm_cmd_fwd.z * v28)))
+			+ (((norm_cmd_fwd.y * v30) + (norm_cmd_fwd.x * v29)) + (norm_cmd_fwd.z * v27));
+		user_cmd.m_move.y = ((((norm_cmd_right.x * v24) + (norm_cmd_right.y * v23)) + (norm_cmd_right.z * v25))
+			+ (((norm_cmd_right.x * v22) + (norm_cmd_right.y * v26)) + (norm_cmd_right.z * v28)))
+			+ (((norm_cmd_right.x * v29) + (norm_cmd_right.y * v30)) + (norm_cmd_right.z * v27));
+		user_cmd.m_move.z = ((((norm_cmd_up.x * v23) + (norm_cmd_up.y * v24)) + (norm_cmd_up.z * v25))
+			+ (((norm_cmd_up.x * v26) + (norm_cmd_up.y * v22)) + (norm_cmd_up.z * v28)))
+			+ (((norm_cmd_up.x * v30) + (norm_cmd_up.y * v29)) + (norm_cmd_up.z * v27));
 
 		if (sdk::g_config_system->slide_walk
 			&& move_type == valve::e_move_type::walk) {
@@ -626,12 +608,9 @@ namespace supremacy::hacks {
 				user_cmd.m_move.y = 0.f;
 			}
 			else
-				g_context->should_return() = false;	
+				g_context->should_return() = false;
 
-			rotate(
-				user_cmd, wish_angles,
-				valve::g_local_player->flags(), valve::g_local_player->move_type()
-			);
+			rotate(user_cmd, wish_angles, valve::g_local_player->move_type());
 		}
 	}
 
@@ -700,15 +679,29 @@ namespace supremacy::hacks {
 				modify_move(user_cmd, velocity);
 			}
 
-			if (!forced_lby_update) {				
-				if (sdk::g_config_system->bunny_hop
-					&& user_cmd.m_buttons & valve::e_buttons::in_jump
-					&& !g_context->cvars().m_sv_autobunnyhopping->get_bool()) {
-					if (valve::g_local_player->flags() & valve::e_ent_flags::on_ground)
-						user_cmd.m_buttons |= valve::e_buttons::in_jump;
-					else
-						user_cmd.m_buttons &= ~valve::e_buttons::in_jump;
+			if (!forced_lby_update) {
+				if (sdk::g_config_system->bunny_hop) {
+					static auto last_jumped = false;
+					static auto should_fake = false;
 
+					if (!last_jumped && should_fake) {
+						should_fake = false;
+						user_cmd.m_buttons |= valve::e_buttons::in_jump;
+					}
+					else if (user_cmd.m_buttons & valve::e_buttons::in_jump) {
+						if (valve::g_local_player->flags() & valve::e_ent_flags::on_ground) {
+							last_jumped = true;
+							should_fake = true;
+						}
+						else {
+							user_cmd.m_buttons &= ~valve::e_buttons::in_jump;
+							last_jumped = false;
+						}
+					}
+					else {
+						last_jumped = false;
+						should_fake = false;
+					}
 				}
 
 				auto_strafe(user_cmd);

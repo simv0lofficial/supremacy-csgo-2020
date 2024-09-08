@@ -8,22 +8,23 @@ namespace supremacy::hacks {
 
 		__forceinline void restore(valve::c_player* const player) const;
 
-		float			m_foot_yaw{};
 		vec3_t			m_origin{}, m_abs_origin{},
 			m_obb_min{}, m_obb_max{};
+		qangle_t		m_abs_angles{};
 
 		valve::bones_t	m_bones{};
 		int				m_bones_count{},
 			m_readable_bones{}, m_writable_bones{};
+
+		unsigned long	m_mdl_bone_counter{};
 	};
 
 	struct lag_record_t {
 		struct anim_side_t {
 			valve::bones_t			m_bones{};
 			std::size_t				m_bones_count{};
-
+			qangle_t				m_abs_angles{};
 			float					m_foot_yaw{};
-
 			valve::anim_layers_t	m_anim_layers{};
 		};
 
@@ -55,15 +56,15 @@ namespace supremacy::hacks {
 
 		bool							m_dormant{}, m_trying_to_resolve{}, m_broke_lc{},
 			m_shot{}, m_throw{}, m_walking{}, m_extending{}, m_sideways{}, m_forward{},
-			m_too_much_diff{}, m_extrapolated{}, m_shifting{}, m_should_skip_accelerating_check{};
+			m_extrapolated{}, m_shifting{};
 
 		valve::e_ent_flags				m_flags{};
 		valve::c_weapon* m_weapon{};
 
 		int								m_sim_ticks{}, m_side{}, m_priority{}, m_type{},
-			m_receive_tick{}, m_extrapolate_ticks{};
+			m_receive_tick{}, m_extrapolate_ticks{}, m_processed_velocity{};
 		float							m_sim_time{}, m_old_sim_time{}, m_lby{}, m_duck_amount{},
-			m_max_body_rotation{}, m_last_shot_time{};
+			m_last_shot_time{};
 
 		qangle_t						m_eye_angles{}, m_abs_angles{};
 		vec3_t							m_velocity{}, m_origin{}, m_obb_min{}, m_obb_max{};
@@ -80,7 +81,7 @@ namespace supremacy::hacks {
 
 		valve::c_player* m_player{};
 
-		float											m_spawn_time{}, m_highest_simtime{}, m_receive_time{},
+		float											m_spawn_time{}, m_highest_simtime{}, m_receive_time{}, m_alive_loop_cycle{},
 			m_server_rate{}, m_negative_rate{}, m_positive_rate{}, m_zero_rate{}, m_low_negative_rate{}, m_low_positive_rate{};
 
 		vec3_t											m_render_origin{};

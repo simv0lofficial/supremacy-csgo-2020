@@ -33,6 +33,12 @@
     <ClCompile Include="util\impl\util.cpp" />
     <ClCompile Include="dependencies\bass\dll.cpp" />
     <ClCompile Include="dependencies\bass\dll_image.cpp" />
+    <ClCompile Include="dependencies\threading\atomic_lock.cpp" />
+    <ClCompile Include="dependencies\threading\mutex.cpp" />
+    <ClCompile Include="dependencies\threading\packed_heap.cpp" />
+    <ClCompile Include="dependencies\threading\semaphores.cpp" />
+    <ClCompile Include="dependencies\threading\shared_mutex.cpp" />
+    <ClCompile Include="dependencies\threading\threading.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="supremacy.hpp" />
@@ -88,6 +94,15 @@
     <ClInclude Include="dependencies\bass\dll.h" />
     <ClInclude Include="dependencies\bass\random.h" />
     <ClInclude Include="dependencies\bass\string_obfuscation.h" />
+    <ClInclude Include="dependencies\threading\atomic_lock.hpp" />
+    <ClInclude Include="dependencies\threading\mutex.hpp" />
+    <ClInclude Include="dependencies\threading\packed_heap.hpp" />
+    <ClInclude Include="dependencies\threading\semaphores.hpp" />
+    <ClInclude Include="dependencies\threading\shared_mutex.hpp" />
+    <ClInclude Include="dependencies\threading\threading.hpp" />
+    <ClInclude Include="dependencies\syscall.hpp" />
+    <ClInclude Include="dependencies\defs.hpp" />
+    <ClInclude Include="dependencies\fnvhash.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="valve\entities\impl\entities.inl" />
