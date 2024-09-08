@@ -111,7 +111,7 @@ namespace supremacy {
 							*m_weapon_recoil_scale{}, *m_weapon_accuracy_shotgun_spread_patterns{},
 							*m_molotov_throw_detonate_time{}, *m_weapon_molotov_maxdetonateslope{},
 							*m_cl_fullupdate{}, *m_mp_teammates_are_enemies{}, *m_sv_legacy_desync{},
-							*m_cl_lagcompensation{}, *m_cl_threaded_bone_setup{}, *m_cl_extrapolate{},
+							*m_cl_lagcompensation{},
 							*m_name{}, *m_voice_loopback{}, *m_pitch{}, *m_yaw{}, *m_sensitivity{};
 		}					m_cvars{};
 

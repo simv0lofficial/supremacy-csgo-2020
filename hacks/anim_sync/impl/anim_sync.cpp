@@ -52,6 +52,7 @@ namespace supremacy::hacks {
 
 		const auto& cur_jump_or_fall_layer = current->m_anim_layers.at(4u);
 		const auto cur_jump_or_fall_cycle = cur_jump_or_fall_layer.m_cycle;
+		const auto cur_jump_or_fall_weight = cur_jump_or_fall_layer.m_weight;
 		const auto cur_jump_or_fall_playback_rate = cur_jump_or_fall_layer.m_playback_rate;
 		const auto cur_jump_or_fall_sequence = cur_jump_or_fall_layer.m_sequence;
 		const auto jump_activity = entry.m_player->lookup_seq_act(cur_jump_or_fall_sequence);
@@ -76,6 +77,18 @@ namespace supremacy::hacks {
 			anim_state->m_acceleration_weight = previous->m_anim_layers.at(12u).m_weight;
 		}
 		else {			
+			entry.m_player->anim_layers() = current->m_anim_layers;
+
+			const auto& cur_movement_move_layer = current->m_anim_layers.at(6u);
+			const auto& cur_movement_strafe_change_layer = current->m_anim_layers.at(7u);
+
+			anim_state->m_feet_cycle = cur_movement_move_layer.m_cycle;
+			anim_state->m_feet_weight = cur_movement_move_layer.m_weight;
+			anim_state->m_strafe_weight = cur_movement_strafe_change_layer.m_weight;
+			anim_state->m_strafe_sequence = cur_movement_strafe_change_layer.m_sequence;
+			anim_state->m_strafe_cycle = cur_movement_strafe_change_layer.m_cycle;
+			anim_state->m_acceleration_weight = current->m_anim_layers.at(12u).m_weight;
+
 			if (current->m_flags & valve::e_ent_flags::on_ground)
 				anim_state->m_on_ground = true;
 
@@ -83,42 +96,80 @@ namespace supremacy::hacks {
 		}
 
 		if (previous
-			&& current->m_sim_ticks > 1) {	
-			auto activity_tick = 0;
+			&& current->m_sim_ticks > 1) {			
 			auto activity_type = 0;
+			auto activity_tick = 0;
 
 			const auto& prev_jump_or_fall_layer = previous->m_anim_layers.at(4u);
 			const auto& prev_land_or_climb_layer = previous->m_anim_layers.at(5u);
 
-			if (cur_land_or_climb_layer.m_weight > 0.f
-				&& prev_land_or_climb_layer.m_weight <= 0.f) {
-				if (cur_land_or_climb_sequence > 2) {
-					if (land_activity == 988
-						|| land_activity == 989) {
-						if (cur_land_or_climb_cycle > 0.f
-							&& cur_land_or_climb_playback_rate > 0.f) {
-							auto land_time = (cur_land_or_climb_cycle / cur_land_or_climb_playback_rate);
+			if (current->m_flags & valve::e_ent_flags::on_ground) {
+				if (cur_land_or_climb_layer.m_weight > 0.f
+					&& prev_land_or_climb_layer.m_weight <= 0.f &&
+					!(previous->m_flags & valve::e_ent_flags::on_ground)) {
+					if (cur_land_or_climb_sequence >= 2) {
+						if (land_activity == 988 ||
+							land_activity == 989) {
+							if (cur_land_or_climb_cycle > 0.f
+								&& cur_land_or_climb_playback_rate > 0.f) {
+								auto land_time = cur_land_or_climb_cycle / cur_land_or_climb_playback_rate;
 
-							if (land_time > 0.f) {
-								activity_tick = valve::to_ticks(current->m_sim_time - land_time) + 1;
-								activity_type = 2;
+								if (land_time != 0.f) {
+									activity_type = 2;
+									activity_tick = valve::to_ticks(current->m_sim_time - land_time) + 1;
+								}
+							}
+						}
+					}
+
+					if (jump_activity == 985) {
+						const auto update_time = (valve::to_ticks(((current->m_old_sim_time + valve::g_global_vars->m_interval_per_tick))) * valve::g_global_vars->m_interval_per_tick) - ((((
+							cur_jump_or_fall_cycle / cur_jump_or_fall_playback_rate) / valve::g_global_vars->m_interval_per_tick
+							) + 0.5f
+							) * valve::g_global_vars->m_interval_per_tick);
+
+						if (update_time > anim_state->m_prev_update_time) {
+							anim_state->m_on_ground = false;
+							entry.m_player->pose_params().at(6u) = 0.f;
+							anim_state->m_time_since_in_air = 0.f;
+							anim_state->m_prev_update_time = update_time;
+						}
+					}
+
+					current->m_velocity.z = 0.f;
+				}
+			}
+			else {
+				if (!(previous->m_flags & valve::e_ent_flags::on_ground)) {
+					if (cur_jump_or_fall_sequence >= 2) {
+						if (jump_activity == 985
+							&& cur_jump_or_fall_cycle > 0.f
+							&& cur_jump_or_fall_playback_rate > 0.f) {
+							const auto jump_time = cur_jump_or_fall_cycle / cur_jump_or_fall_playback_rate;
+
+							if (jump_time != 0.f) {
+								activity_type = 1;
+								activity_tick = valve::to_ticks(current->m_sim_time - jump_time) + 1;
 							}
 						}
 					}
 				}
-			}
 
-			if (cur_jump_or_fall_cycle > 0.f
-				&& cur_jump_or_fall_playback_rate > 0.f) {
-				if (cur_jump_or_fall_sequence > 2) {
-					if (jump_activity == 985
-						&& cur_jump_or_fall_cycle > 0.f && cur_jump_or_fall_playback_rate > 0.f) {
-						auto jump_time = (cur_jump_or_fall_cycle / cur_jump_or_fall_playback_rate);
+				if (jump_activity == 985
+					&& cur_jump_or_fall_weight > 0.f
+					&& cur_jump_or_fall_playback_rate > 0.f) {
 
-						if (jump_time > 0.f) {
-							activity_tick = valve::to_ticks(current->m_sim_time - jump_time) + 1;
-							activity_type = 1;
-						}
+					const auto jump_time = (((cur_jump_or_fall_cycle / cur_jump_or_fall_playback_rate)
+						/ valve::g_global_vars->m_interval_per_tick) + 0.5f) * valve::g_global_vars->m_interval_per_tick;
+
+					current->m_velocity.z = g_context->cvars().m_sv_jump_impulse->get_float() - g_context->cvars().m_sv_gravity->get_float() * jump_time;
+
+					const auto& prev_jump_or_fall_layer_cycle = prev_jump_or_fall_layer.m_cycle;
+
+					if ((cur_jump_or_fall_cycle != prev_jump_or_fall_layer_cycle || prev_jump_or_fall_layer.m_sequence != cur_jump_or_fall_sequence)
+						&& prev_jump_or_fall_layer_cycle > cur_jump_or_fall_cycle) {
+						entry.m_player->pose_params().at(6u) = 0.f;
+						entry.m_player->anim_state()->m_time_since_in_air = cur_jump_or_fall_cycle / cur_jump_or_fall_playback_rate;
 					}
 				}
 			}
@@ -142,7 +193,7 @@ namespace supremacy::hacks {
 						entry.m_player->velocity() = entry.m_player->abs_velocity() = math::anim_lerp(previous->m_velocity, current->m_velocity, sim_tick, current->m_sim_ticks);
 						entry.m_player->duck_amount() = math::anim_lerp(previous->m_duck_amount, current->m_duck_amount, sim_tick, current->m_sim_ticks);
 					}
-					
+				
 					if (activity_type) {
 						bool is_on_ground = entry.m_player->flags() & valve::e_ent_flags::on_ground;
 
@@ -151,6 +202,7 @@ namespace supremacy::hacks {
 								is_on_ground = true;
 							else if (cur_sim_tick == activity_tick) {
 								entry.m_player->anim_layers()[4u].m_cycle = 0.f;
+								entry.m_player->anim_layers()[4u].m_weight = 0.f;
 								entry.m_player->anim_layers()[4u].m_sequence = cur_jump_or_fall_sequence;
 								entry.m_player->anim_layers()[4u].m_playback_rate = cur_jump_or_fall_playback_rate;
 								is_on_ground = false;
@@ -161,6 +213,7 @@ namespace supremacy::hacks {
 								is_on_ground = false;
 							else if (cur_sim_tick == activity_tick) {
 								entry.m_player->anim_layers()[5u].m_cycle = 0.f;
+								entry.m_player->anim_layers()[5u].m_weight = 0.f;
 								entry.m_player->anim_layers()[5u].m_sequence = cur_land_or_climb_sequence;
 								entry.m_player->anim_layers()[5u].m_playback_rate = cur_land_or_climb_playback_rate;
 								is_on_ground = true;
@@ -176,7 +229,12 @@ namespace supremacy::hacks {
 				else {
 					entry.m_player->velocity() = entry.m_player->abs_velocity() = current->m_velocity;
 					entry.m_player->duck_amount() = current->m_duck_amount;
-					entry.m_player->flags() = current->m_flags;					
+					entry.m_player->flags() = current->m_flags;		
+
+					if (current->m_duck_amount > 0.75f)
+						entry.m_player->flags() |= valve::e_ent_flags::ducking;						
+					else
+						entry.m_player->flags() &= ~valve::e_ent_flags::ducking;
 				}
 
 				switch (side) {

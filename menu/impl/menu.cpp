@@ -194,7 +194,7 @@ namespace supremacy {
 					|| sdk::g_config_system->safe_point_conditions[6]
 					|| sdk::g_config_system->safe_point_conditions[7]
 					) {
-					ui::SingleSelect("type", &sdk::g_config_system->safe_point_type, { "normal point", "strict point", "normal hitbox", "strict hitbox" });
+					ui::SingleSelect("type", &sdk::g_config_system->safe_point_type, { "normal", "strict" });
 					if (sdk::g_config_system->safe_point_conditions[5])
 						ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->max_misses_safe_point, 1, 5, "%d miss");
 				}

@@ -961,7 +961,7 @@ namespace supremacy::hacks {
 			if ((v17 - valve::to_ticks(latest->m_sim_time - latest->m_old_sim_time)) >= 0)
 				return std::nullopt;
 
-			return select_latest_record(entry);
+			return extrapolate(entry);
 		}
 
 		if (entry.m_lag_records.size() == 1u

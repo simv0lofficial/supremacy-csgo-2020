@@ -481,8 +481,6 @@ namespace supremacy {
 			m_cvars.m_cl_fullupdate = valve::g_cvar->find_var(xorstr_("cl_fullupdate"));
 			m_cvars.m_mp_teammates_are_enemies = valve::g_cvar->find_var(xorstr_("mp_teammates_are_enemies"));
 			m_cvars.m_cl_lagcompensation = valve::g_cvar->find_var(xorstr_("cl_lagcompensation"));
-			m_cvars.m_cl_threaded_bone_setup = valve::g_cvar->find_var(xorstr_("cl_threaded_bone_setup"));
-			m_cvars.m_cl_extrapolate = valve::g_cvar->find_var(xorstr_("cl_extrapolate"));
 			m_cvars.m_name = valve::g_cvar->find_var(xorstr_("name"));
 			m_cvars.m_voice_loopback = valve::g_cvar->find_var(xorstr_("voice_loopback"));
 			m_cvars.m_pitch = valve::g_cvar->find_var(xorstr_("m_pitch"));

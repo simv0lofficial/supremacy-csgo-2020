@@ -786,7 +786,6 @@ namespace supremacy::hooks
 
 	void __stdcall frame_stage_notify(const valve::e_frame_stage stage) {
 		hacks::g_eng_pred->last_frame_stage() = stage;
-		g_context->cvars().m_cl_threaded_bone_setup->set_int(1);
 
 		if (!valve::g_local_player
 			|| !valve::g_engine->in_game())
