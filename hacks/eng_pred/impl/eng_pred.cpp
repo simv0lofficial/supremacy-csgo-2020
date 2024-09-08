@@ -38,7 +38,8 @@ namespace supremacy::hacks {
 
 		const auto backup_in_prediction = valve::g_prediction->m_in_prediction;
 		const auto backup_first_time_predicted = valve::g_prediction->m_first_time_predicted;
-		
+		const auto backup_velocity_modifier = valve::g_local_player->velocity_modifier();
+
 		valve::g_prediction->m_in_prediction = true;
 		valve::g_prediction->m_first_time_predicted = false;
 
@@ -46,15 +47,11 @@ namespace supremacy::hacks {
 
 		valve::g_movement->start_track_prediction_errors(valve::g_local_player);
 
-		const auto backup_velocity_modifier = valve::g_local_player->velocity_modifier();
-
 		valve::g_prediction->setup_move(valve::g_local_player, user_cmd, valve::g_move_helper, &m_move_data);
 
 		valve::g_movement->process_movement(valve::g_local_player, &m_move_data);
 
 		valve::g_prediction->finish_move(valve::g_local_player, user_cmd, &m_move_data);
-
-		valve::g_local_player->velocity_modifier() = backup_velocity_modifier;
 
 		valve::g_movement->finish_track_prediction_errors(valve::g_local_player);
 
@@ -83,7 +80,8 @@ namespace supremacy::hacks {
 		m_local_data.at(user_cmd->m_number % 150).save(user_cmd->m_number);
 
 		valve::g_prediction->m_in_prediction = backup_in_prediction;
-		valve::g_prediction->m_first_time_predicted = backup_first_time_predicted;		
+		valve::g_prediction->m_first_time_predicted = backup_first_time_predicted;
+		valve::g_local_player->velocity_modifier() = backup_velocity_modifier;
 
 		update_shoot_pos();
 	}

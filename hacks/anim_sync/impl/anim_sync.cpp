@@ -581,7 +581,8 @@ namespace supremacy::hacks {
 			valve::pose_params_t	m_pose_params{};
 		} anim_backup{ entry.m_player };
 
-		if (g_context->cvars().m_cl_lagcompensation->get_bool()) {
+		if (g_context->cvars().m_cl_lagcompensation->get_bool()
+			&& !(current->m_flags & valve::e_ent_flags::fake_client)) {
 			if (entry.m_highest_simtime > current->m_sim_time + valve::to_time((((*valve::g_game_rules)->is_valve_ds() == true) ? 8 : 16)))
 				entry.m_highest_simtime = 0.f;
 

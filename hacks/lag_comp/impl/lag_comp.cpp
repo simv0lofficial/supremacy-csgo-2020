@@ -3,6 +3,7 @@
 namespace supremacy::hacks {
 	void c_lag_comp::on_net_update() {
 		const auto tick_rate = valve::to_ticks(1.f);
+
 		for (auto i = 1; i <= valve::g_global_vars->m_max_clients; ++i) {
 			auto& entry = m_entries.at(i - 1);
 
@@ -11,12 +12,8 @@ namespace supremacy::hacks {
 				);
 
 			if (player == valve::g_local_player) {
-				/*if (HIWORD(GetKeyState(VK_NUMPAD5))) {
-					util::g_notify->print_logo();
-					util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("yaw %f | lby %f | gfy %f\n"), std::remainder(player->eye_angles().y, 360.f), std::remainder(player->lby(), 360.f), std::remainder(player->anim_state()->m_foot_yaw, 360.f));
-				}*/
-
 				entry.reset();
+
 				g_visuals->send_net_data(player);
 				continue;
 			}
@@ -73,8 +70,10 @@ namespace supremacy::hacks {
 				continue;
 
 			const auto& cur_alive_loop_cycle = player->anim_layers().at(11).m_cycle;
-			if (cur_alive_loop_cycle == entry.m_alive_loop_cycle)
-				continue;			
+			if (cur_alive_loop_cycle == entry.m_alive_loop_cycle) {
+				player->sim_time() = player->old_sim_time();
+				continue;
+			}
 
 			entry.m_receive_time = valve::g_global_vars->m_real_time;
 			entry.m_alive_loop_cycle = cur_alive_loop_cycle;

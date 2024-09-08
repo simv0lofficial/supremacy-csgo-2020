@@ -545,12 +545,9 @@ namespace supremacy::hacks {
 					std::lerp(next_origin.z, current->m_origin.z, lerp_amt)
 				};
 
-				const auto& anim_side = current->m_side < 3 ? current->m_sides.at(current->m_side) : current->m_low_sides.at(current->m_side - 3);
-
-				auto lerped_bones = anim_side.m_bones;
-
 				const auto origin_delta = lerped_origin - current->m_origin;
 
+				auto lerped_bones = current->m_sides.at(0).m_bones;
 				for (std::size_t i{}; i < lerped_bones.size(); ++i) {
 					lerped_bones[i][0][3] += origin_delta.x;
 					lerped_bones[i][1][3] += origin_delta.y;
