@@ -273,6 +273,7 @@
     <None Include="hacks\lag_comp\impl\lag_comp.inl" />
     <None Include="hacks\movement\impl\movement.inl" />
     <None Include="hacks\shots\impl\shots.inl" />
+    <None Include="hacks\skins\impl\skins.inl" />
     <None Include="hacks\visuals\impl\visuals.inl" />
     <None Include="math\impl\math.inl" />
     <None Include="util\impl\util.inl" />

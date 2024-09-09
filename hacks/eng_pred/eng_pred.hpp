@@ -8,9 +8,9 @@ namespace supremacy::hacks {
 		}								m_backup{};
 
 		struct net_vars_t {
-			__forceinline void restore(const int cmd_number) const;
+			__forceinline void restore( const int cmd_number ) const;
 
-			__forceinline void store(const int cmd_number);
+			__forceinline void store( const int cmd_number );
 
 			int			m_cmd_number{};
 
@@ -19,13 +19,13 @@ namespace supremacy::hacks {
 		};
 	public:
 		struct local_data_t {
-			__forceinline void init(const valve::user_cmd_t& user_cmd);
+			__forceinline void init( const valve::user_cmd_t& user_cmd );
 
-			__forceinline void save(const int cmd_number);
+			__forceinline void save( const int cmd_number );
 
-			__forceinline void store_anim();
+			__forceinline void store_anim( );
 
-			__forceinline void restore_anim(const bool layers) const;
+			__forceinline void restore_anim( const bool layers ) const;
 
 			float					m_spawn_time{}, m_abs_yaw{};
 
@@ -69,7 +69,7 @@ namespace supremacy::hacks {
 			m_min_inaccuracy{},
 			m_postpone_fire_ready_time{},
 			m_recoil_index{}, m_accuracy_penalty{},
-			m_velocity_modifier{}, m_net_velocity_modifier{ 1.f };
+			m_net_velocity_modifier{ 1.f };
 
 		std::array< net_vars_t, 150u >		m_net_vars{};
 		std::array< local_data_t, 150u >	m_local_data{};
@@ -77,46 +77,44 @@ namespace supremacy::hacks {
 		valve::move_data_t					m_move_data{};
 		valve::e_frame_stage				m_last_frame_stage{};
 	public:
-		void prepare();
+		void prepare( );
 
-		void predict(valve::user_cmd_t* const user_cmd);
+		void predict( valve::user_cmd_t* const user_cmd );
 
-		void restore();
+		void restore( );
 
-		void update_shoot_pos() const;
+		void update_shoot_pos( ) const;
 
-		__forceinline valve::e_frame_stage& last_frame_stage();
+		__forceinline valve::e_frame_stage& last_frame_stage( );
 
-		__forceinline std::array< net_vars_t, 150u >& net_vars();
+		__forceinline std::array< net_vars_t, 150u >& net_vars( );
 
-		__forceinline std::array< local_data_t, 150u >& local_data();
+		__forceinline std::array< local_data_t, 150u >& local_data( );
 
-		__forceinline void reset_on_spawn();
+		__forceinline void reset_on_spawn( );
 
-		__forceinline valve::user_cmd_t& old_user_cmd();
+		__forceinline valve::user_cmd_t& old_user_cmd( );
 
-		__forceinline valve::user_cmd_t& last_user_cmd();
+		__forceinline valve::user_cmd_t& last_user_cmd( );
 
-		__forceinline float& spread();
+		__forceinline float& spread( );
 
-		__forceinline float& inaccuracy();
+		__forceinline float& inaccuracy( );
 
-		__forceinline float& min_inaccuracy();
+		__forceinline float& min_inaccuracy( );
 
-		__forceinline float& recoil_index();
+		__forceinline float& recoil_index( );
 
-		__forceinline float& accuracy_penalty();
+		__forceinline float& accuracy_penalty( );
 
-		__forceinline float& velocity_modifier();
+		__forceinline float& net_velocity_modifier( );
 
-		__forceinline float& net_velocity_modifier();
+		__forceinline bool& r8_can_shoot( );
 
-		__forceinline bool& r8_can_shoot();
-
-		__forceinline float& postpone_fire_ready_time();
+		__forceinline float& postpone_fire_ready_time( );
 	};
 
-	inline const auto g_eng_pred = std::make_unique< c_eng_pred >();
+	inline const auto g_eng_pred = std::make_unique< c_eng_pred >( );
 }
 
 #include "impl/eng_pred.inl"

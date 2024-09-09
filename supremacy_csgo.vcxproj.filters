@@ -121,5 +121,6 @@
     <None Include="hacks\shots\impl\shots.inl" />
     <None Include="hacks\visuals\impl\visuals.inl" />
     <None Include="util\impl\util.inl" />
+    <None Include="hacks\skins\impl\skins.inl" />
   </ItemGroup>
 </Project>
