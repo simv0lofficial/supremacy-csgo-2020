@@ -1,5 +1,6 @@
 #pragma once
 
+#define TWENTYTWENTY false
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 #define _HAS_EXCEPTIONS 0
@@ -56,8 +57,6 @@
 #include "dependencies/hash.hpp"
 #include "dependencies/xorstr.hpp"
 #include "dependencies/defs.hpp"
-#include "dependencies/threading/threading.hpp"
-#include "dependencies/threading/shared_mutex.hpp"
 #include "dependencies/syscall.hpp"
 
 #define JSON_NOEXCEPTION

@@ -486,7 +486,7 @@ namespace supremacy::hooks
 		if (!user_cmd.m_number)
 			return;
 
-		auto wish_angles = user_cmd.m_view_angles;
+		g_context->view_angles() = user_cmd.m_view_angles;
 
 		const auto net_channel_info = valve::g_engine->net_channel_info();
 		if (!net_channel_info)
@@ -518,23 +518,12 @@ namespace supremacy::hooks
 
 		hacks::g_visuals->on_pre_create_move(user_cmd);
 
-		static bool reset = false;
-		static int last_team = -1;
-		if (reset) {
-			valve::g_engine->exec_cmd(last_team == 2 ? xorstr_("jointeam 2") : xorstr_("jointeam 3"));
-			reset = false;
-		}
 		const auto backup_team = valve::g_local_player->team();
-		if (g_context->switch_lagcompensation_state()) {			
-			if (backup_team == 1)
-				g_context->cvars().m_cl_lagcompensation->set_int(!g_context->cvars().m_cl_lagcompensation->get_bool());
-			else {
-				last_team = backup_team;
-				valve::g_engine->exec_cmd(xorstr_("jointeam 1"));
-				g_context->cvars().m_cl_lagcompensation->set_int(!g_context->cvars().m_cl_lagcompensation->get_bool());
-				reset = true;
-			}
+		if (g_context->switch_lagcompensation_state()) {
+			valve::g_engine->exec_cmd(xorstr_("spectate"));
+			g_context->cvars().m_cl_lagcompensation->set_int(!g_context->cvars().m_cl_lagcompensation->get_bool());
 
+			valve::g_engine->exec_cmd(std::format("jointeam {} 1", backup_team).data());
 			g_context->switch_lagcompensation_state() = false;
 		}
 
@@ -545,6 +534,595 @@ namespace supremacy::hooks
 			g_context->wpn_data() = g_context->weapon()->wpn_data();
 		else
 			g_context->wpn_data() = nullptr;
+
+		// todo: simv0l - move this shit somewhere.
+		if (g_context->wpn_data()) {
+			if (g_context->weapon()->item_index() == valve::e_item_index::elite
+				|| g_context->weapon()->item_index() == valve::e_item_index::fiveseven
+				|| g_context->weapon()->item_index() == valve::e_item_index::glock
+				|| g_context->weapon()->item_index() == valve::e_item_index::p250
+				|| g_context->weapon()->item_index() == valve::e_item_index::tec9
+				|| g_context->weapon()->item_index() == valve::e_item_index::hkp2000
+				|| g_context->weapon()->item_index() == valve::e_item_index::usp_silencer
+				|| g_context->weapon()->item_index() == valve::e_item_index::cz75a) {
+				if (!g_menu->m_is_opened)
+					sdk::g_config_system->weapon_selection = 0;
+				sdk::g_config_system->target_hitbox[0] = sdk::g_config_system->pistols_target_hitbox[0];
+				sdk::g_config_system->target_hitbox[1] = sdk::g_config_system->pistols_target_hitbox[1];
+				sdk::g_config_system->target_hitbox[2] = sdk::g_config_system->pistols_target_hitbox[2];
+				sdk::g_config_system->target_hitbox[3] = sdk::g_config_system->pistols_target_hitbox[3];
+				sdk::g_config_system->target_hitbox[4] = sdk::g_config_system->pistols_target_hitbox[4];
+				sdk::g_config_system->target_hitbox[5] = sdk::g_config_system->pistols_target_hitbox[5];
+				sdk::g_config_system->multi_point[0] = sdk::g_config_system->pistols_multi_point[0];
+				sdk::g_config_system->multi_point[1] = sdk::g_config_system->pistols_multi_point[1];
+				sdk::g_config_system->multi_point[2] = sdk::g_config_system->pistols_multi_point[2];
+				sdk::g_config_system->multi_point[3] = sdk::g_config_system->pistols_multi_point[3];
+				sdk::g_config_system->multi_point[4] = sdk::g_config_system->pistols_multi_point[4];
+				sdk::g_config_system->multi_point[5] = sdk::g_config_system->pistols_multi_point[5];
+				sdk::g_config_system->static_scale = sdk::g_config_system->pistols_static_scale;
+				sdk::g_config_system->head_scale = sdk::g_config_system->pistols_head_scale;
+				sdk::g_config_system->body_scale = sdk::g_config_system->pistols_body_scale;
+				sdk::g_config_system->automatic_fire = sdk::g_config_system->pistols_automatic_fire;
+				sdk::g_config_system->silent_aim = sdk::g_config_system->pistols_silent_aim;
+				sdk::g_config_system->minimum_hitchance = sdk::g_config_system->pistols_minimum_hitchance;
+				sdk::g_config_system->minimum_damage = sdk::g_config_system->pistols_minimum_damage;
+				sdk::g_config_system->automatic_penetration = sdk::g_config_system->pistols_automatic_penetration;
+				sdk::g_config_system->penetration_minimum_damage = sdk::g_config_system->pistols_penetration_minimum_damage;
+				sdk::g_config_system->override_minimum_damage = sdk::g_config_system->pistols_override_minimum_damage;
+				sdk::g_config_system->automatic_scope = sdk::g_config_system->pistols_automatic_scope;
+				sdk::g_config_system->maximum_fov = sdk::g_config_system->pistols_maximum_fov;
+				sdk::g_config_system->remove_recoil = sdk::g_config_system->pistols_remove_recoil;
+				sdk::g_config_system->accuracy_boost = sdk::g_config_system->pistols_accuracy_boost;
+				sdk::g_config_system->quick_stop = sdk::g_config_system->pistols_quick_stop;
+				sdk::g_config_system->type = sdk::g_config_system->pistols_type;
+				sdk::g_config_system->between_shots = sdk::g_config_system->pistols_between_shots;
+				sdk::g_config_system->lag_compensation = sdk::g_config_system->pistols_lag_compensation;
+				sdk::g_config_system->body_aim_conditions[0] = sdk::g_config_system->pistols_body_aim_conditions[0];
+				sdk::g_config_system->body_aim_conditions[1] = sdk::g_config_system->pistols_body_aim_conditions[1];
+				sdk::g_config_system->body_aim_conditions[2] = sdk::g_config_system->pistols_body_aim_conditions[2];
+				sdk::g_config_system->body_aim_conditions[3] = sdk::g_config_system->pistols_body_aim_conditions[3];
+				sdk::g_config_system->body_aim_conditions[4] = sdk::g_config_system->pistols_body_aim_conditions[4];
+				sdk::g_config_system->body_aim_conditions[5] = sdk::g_config_system->pistols_body_aim_conditions[5];
+				sdk::g_config_system->body_aim_conditions[6] = sdk::g_config_system->pistols_body_aim_conditions[6];
+				sdk::g_config_system->body_aim_conditions[7] = sdk::g_config_system->pistols_body_aim_conditions[7];
+				sdk::g_config_system->body_aim_conditions[8] = sdk::g_config_system->pistols_body_aim_conditions[8];
+				sdk::g_config_system->max_misses_body_aim = sdk::g_config_system->pistols_max_misses_body_aim;
+				sdk::g_config_system->safe_point_conditions[0] = sdk::g_config_system->pistols_safe_point_conditions[0];
+				sdk::g_config_system->safe_point_conditions[1] = sdk::g_config_system->pistols_safe_point_conditions[1];
+				sdk::g_config_system->safe_point_conditions[2] = sdk::g_config_system->pistols_safe_point_conditions[2];
+				sdk::g_config_system->safe_point_conditions[3] = sdk::g_config_system->pistols_safe_point_conditions[3];
+				sdk::g_config_system->safe_point_conditions[4] = sdk::g_config_system->pistols_safe_point_conditions[4];
+				sdk::g_config_system->safe_point_conditions[5] = sdk::g_config_system->pistols_safe_point_conditions[5];
+				sdk::g_config_system->safe_point_conditions[6] = sdk::g_config_system->pistols_safe_point_conditions[6];
+				sdk::g_config_system->safe_point_conditions[7] = sdk::g_config_system->pistols_safe_point_conditions[7];
+				sdk::g_config_system->safe_point_type = sdk::g_config_system->pistols_safe_point_type;
+				sdk::g_config_system->max_misses_safe_point = sdk::g_config_system->pistols_max_misses_safe_point;
+				sdk::g_config_system->double_tap = sdk::g_config_system->pistols_double_tap;
+				sdk::g_config_system->max_shift_amount = sdk::g_config_system->pistols_max_shift_amount;
+			}
+			else if (g_context->weapon()->item_index() == valve::e_item_index::deagle
+				|| g_context->weapon()->item_index() == valve::e_item_index::revolver) {
+				if (!g_menu->m_is_opened)
+					sdk::g_config_system->weapon_selection = 1;
+				sdk::g_config_system->target_hitbox[0] = sdk::g_config_system->heavy_pistols_target_hitbox[0];
+				sdk::g_config_system->target_hitbox[1] = sdk::g_config_system->heavy_pistols_target_hitbox[1];
+				sdk::g_config_system->target_hitbox[2] = sdk::g_config_system->heavy_pistols_target_hitbox[2];
+				sdk::g_config_system->target_hitbox[3] = sdk::g_config_system->heavy_pistols_target_hitbox[3];
+				sdk::g_config_system->target_hitbox[4] = sdk::g_config_system->heavy_pistols_target_hitbox[4];
+				sdk::g_config_system->target_hitbox[5] = sdk::g_config_system->heavy_pistols_target_hitbox[5];
+				sdk::g_config_system->multi_point[0] = sdk::g_config_system->heavy_pistols_multi_point[0];
+				sdk::g_config_system->multi_point[1] = sdk::g_config_system->heavy_pistols_multi_point[1];
+				sdk::g_config_system->multi_point[2] = sdk::g_config_system->heavy_pistols_multi_point[2];
+				sdk::g_config_system->multi_point[3] = sdk::g_config_system->heavy_pistols_multi_point[3];
+				sdk::g_config_system->multi_point[4] = sdk::g_config_system->heavy_pistols_multi_point[4];
+				sdk::g_config_system->multi_point[5] = sdk::g_config_system->heavy_pistols_multi_point[5];
+				sdk::g_config_system->static_scale = sdk::g_config_system->heavy_pistols_static_scale;
+				sdk::g_config_system->head_scale = sdk::g_config_system->heavy_pistols_head_scale;
+				sdk::g_config_system->body_scale = sdk::g_config_system->heavy_pistols_body_scale;
+				sdk::g_config_system->automatic_fire = sdk::g_config_system->heavy_pistols_automatic_fire;
+				sdk::g_config_system->silent_aim = sdk::g_config_system->heavy_pistols_silent_aim;
+				sdk::g_config_system->minimum_hitchance = sdk::g_config_system->heavy_pistols_minimum_hitchance;
+				sdk::g_config_system->minimum_damage = sdk::g_config_system->heavy_pistols_minimum_damage;
+				sdk::g_config_system->automatic_penetration = sdk::g_config_system->heavy_pistols_automatic_penetration;
+				sdk::g_config_system->penetration_minimum_damage = sdk::g_config_system->heavy_pistols_penetration_minimum_damage;
+				sdk::g_config_system->override_minimum_damage = sdk::g_config_system->heavy_pistols_override_minimum_damage;
+				sdk::g_config_system->automatic_scope = sdk::g_config_system->heavy_pistols_automatic_scope;
+				sdk::g_config_system->maximum_fov = sdk::g_config_system->heavy_pistols_maximum_fov;
+				sdk::g_config_system->remove_recoil = sdk::g_config_system->heavy_pistols_remove_recoil;
+				sdk::g_config_system->accuracy_boost = sdk::g_config_system->heavy_pistols_accuracy_boost;
+				sdk::g_config_system->quick_stop = sdk::g_config_system->heavy_pistols_quick_stop;
+				sdk::g_config_system->type = sdk::g_config_system->heavy_pistols_type;
+				sdk::g_config_system->between_shots = sdk::g_config_system->heavy_pistols_between_shots;
+				sdk::g_config_system->lag_compensation = sdk::g_config_system->heavy_pistols_lag_compensation;
+				sdk::g_config_system->body_aim_conditions[0] = sdk::g_config_system->heavy_pistols_body_aim_conditions[0];
+				sdk::g_config_system->body_aim_conditions[1] = sdk::g_config_system->heavy_pistols_body_aim_conditions[1];
+				sdk::g_config_system->body_aim_conditions[2] = sdk::g_config_system->heavy_pistols_body_aim_conditions[2];
+				sdk::g_config_system->body_aim_conditions[3] = sdk::g_config_system->heavy_pistols_body_aim_conditions[3];
+				sdk::g_config_system->body_aim_conditions[4] = sdk::g_config_system->heavy_pistols_body_aim_conditions[4];
+				sdk::g_config_system->body_aim_conditions[5] = sdk::g_config_system->heavy_pistols_body_aim_conditions[5];
+				sdk::g_config_system->body_aim_conditions[6] = sdk::g_config_system->heavy_pistols_body_aim_conditions[6];
+				sdk::g_config_system->body_aim_conditions[7] = sdk::g_config_system->heavy_pistols_body_aim_conditions[7];
+				sdk::g_config_system->body_aim_conditions[8] = sdk::g_config_system->heavy_pistols_body_aim_conditions[8];
+				sdk::g_config_system->max_misses_body_aim = sdk::g_config_system->heavy_pistols_max_misses_body_aim;
+				sdk::g_config_system->safe_point_conditions[0] = sdk::g_config_system->heavy_pistols_safe_point_conditions[0];
+				sdk::g_config_system->safe_point_conditions[1] = sdk::g_config_system->heavy_pistols_safe_point_conditions[1];
+				sdk::g_config_system->safe_point_conditions[2] = sdk::g_config_system->heavy_pistols_safe_point_conditions[2];
+				sdk::g_config_system->safe_point_conditions[3] = sdk::g_config_system->heavy_pistols_safe_point_conditions[3];
+				sdk::g_config_system->safe_point_conditions[4] = sdk::g_config_system->heavy_pistols_safe_point_conditions[4];
+				sdk::g_config_system->safe_point_conditions[5] = sdk::g_config_system->heavy_pistols_safe_point_conditions[5];
+				sdk::g_config_system->safe_point_conditions[6] = sdk::g_config_system->heavy_pistols_safe_point_conditions[6];
+				sdk::g_config_system->safe_point_conditions[7] = sdk::g_config_system->heavy_pistols_safe_point_conditions[7];
+				sdk::g_config_system->safe_point_type = sdk::g_config_system->heavy_pistols_safe_point_type;
+				sdk::g_config_system->max_misses_safe_point = sdk::g_config_system->heavy_pistols_max_misses_safe_point;
+				sdk::g_config_system->double_tap = sdk::g_config_system->heavy_pistols_double_tap;
+				sdk::g_config_system->max_shift_amount = sdk::g_config_system->heavy_pistols_max_shift_amount;
+			}
+			else if (g_context->weapon()->item_index() == valve::e_item_index::mac10
+				|| g_context->weapon()->item_index() == valve::e_item_index::p90
+				|| g_context->weapon()->item_index() == valve::e_item_index::mp5sd
+				|| g_context->weapon()->item_index() == valve::e_item_index::ump45
+				|| g_context->weapon()->item_index() == valve::e_item_index::bizon
+				|| g_context->weapon()->item_index() == valve::e_item_index::mp7
+				|| g_context->weapon()->item_index() == valve::e_item_index::mp9) {
+				if (!g_menu->m_is_opened)
+					sdk::g_config_system->weapon_selection = 2;
+				sdk::g_config_system->target_hitbox[0] = sdk::g_config_system->sub_machine_guns_target_hitbox[0];
+				sdk::g_config_system->target_hitbox[1] = sdk::g_config_system->sub_machine_guns_target_hitbox[1];
+				sdk::g_config_system->target_hitbox[2] = sdk::g_config_system->sub_machine_guns_target_hitbox[2];
+				sdk::g_config_system->target_hitbox[3] = sdk::g_config_system->sub_machine_guns_target_hitbox[3];
+				sdk::g_config_system->target_hitbox[4] = sdk::g_config_system->sub_machine_guns_target_hitbox[4];
+				sdk::g_config_system->target_hitbox[5] = sdk::g_config_system->sub_machine_guns_target_hitbox[5];
+				sdk::g_config_system->multi_point[0] = sdk::g_config_system->sub_machine_guns_multi_point[0];
+				sdk::g_config_system->multi_point[1] = sdk::g_config_system->sub_machine_guns_multi_point[1];
+				sdk::g_config_system->multi_point[2] = sdk::g_config_system->sub_machine_guns_multi_point[2];
+				sdk::g_config_system->multi_point[3] = sdk::g_config_system->sub_machine_guns_multi_point[3];
+				sdk::g_config_system->multi_point[4] = sdk::g_config_system->sub_machine_guns_multi_point[4];
+				sdk::g_config_system->multi_point[5] = sdk::g_config_system->sub_machine_guns_multi_point[5];
+				sdk::g_config_system->static_scale = sdk::g_config_system->sub_machine_guns_static_scale;
+				sdk::g_config_system->head_scale = sdk::g_config_system->sub_machine_guns_head_scale;
+				sdk::g_config_system->body_scale = sdk::g_config_system->sub_machine_guns_body_scale;
+				sdk::g_config_system->automatic_fire = sdk::g_config_system->sub_machine_guns_automatic_fire;
+				sdk::g_config_system->silent_aim = sdk::g_config_system->sub_machine_guns_silent_aim;
+				sdk::g_config_system->minimum_hitchance = sdk::g_config_system->sub_machine_guns_minimum_hitchance;
+				sdk::g_config_system->minimum_damage = sdk::g_config_system->sub_machine_guns_minimum_damage;
+				sdk::g_config_system->automatic_penetration = sdk::g_config_system->sub_machine_guns_automatic_penetration;
+				sdk::g_config_system->penetration_minimum_damage = sdk::g_config_system->sub_machine_guns_penetration_minimum_damage;
+				sdk::g_config_system->override_minimum_damage = sdk::g_config_system->sub_machine_guns_override_minimum_damage;
+				sdk::g_config_system->automatic_scope = sdk::g_config_system->sub_machine_guns_automatic_scope;
+				sdk::g_config_system->maximum_fov = sdk::g_config_system->sub_machine_guns_maximum_fov;
+				sdk::g_config_system->remove_recoil = sdk::g_config_system->sub_machine_guns_remove_recoil;
+				sdk::g_config_system->accuracy_boost = sdk::g_config_system->sub_machine_guns_accuracy_boost;
+				sdk::g_config_system->quick_stop = sdk::g_config_system->sub_machine_guns_quick_stop;
+				sdk::g_config_system->type = sdk::g_config_system->sub_machine_guns_type;
+				sdk::g_config_system->between_shots = sdk::g_config_system->sub_machine_guns_between_shots;
+				sdk::g_config_system->lag_compensation = sdk::g_config_system->sub_machine_guns_lag_compensation;
+				sdk::g_config_system->body_aim_conditions[0] = sdk::g_config_system->sub_machine_guns_body_aim_conditions[0];
+				sdk::g_config_system->body_aim_conditions[1] = sdk::g_config_system->sub_machine_guns_body_aim_conditions[1];
+				sdk::g_config_system->body_aim_conditions[2] = sdk::g_config_system->sub_machine_guns_body_aim_conditions[2];
+				sdk::g_config_system->body_aim_conditions[3] = sdk::g_config_system->sub_machine_guns_body_aim_conditions[3];
+				sdk::g_config_system->body_aim_conditions[4] = sdk::g_config_system->sub_machine_guns_body_aim_conditions[4];
+				sdk::g_config_system->body_aim_conditions[5] = sdk::g_config_system->sub_machine_guns_body_aim_conditions[5];
+				sdk::g_config_system->body_aim_conditions[6] = sdk::g_config_system->sub_machine_guns_body_aim_conditions[6];
+				sdk::g_config_system->body_aim_conditions[7] = sdk::g_config_system->sub_machine_guns_body_aim_conditions[7];
+				sdk::g_config_system->body_aim_conditions[8] = sdk::g_config_system->sub_machine_guns_body_aim_conditions[8];
+				sdk::g_config_system->max_misses_body_aim = sdk::g_config_system->sub_machine_guns_max_misses_body_aim;
+				sdk::g_config_system->safe_point_conditions[0] = sdk::g_config_system->sub_machine_guns_safe_point_conditions[0];
+				sdk::g_config_system->safe_point_conditions[1] = sdk::g_config_system->sub_machine_guns_safe_point_conditions[1];
+				sdk::g_config_system->safe_point_conditions[2] = sdk::g_config_system->sub_machine_guns_safe_point_conditions[2];
+				sdk::g_config_system->safe_point_conditions[3] = sdk::g_config_system->sub_machine_guns_safe_point_conditions[3];
+				sdk::g_config_system->safe_point_conditions[4] = sdk::g_config_system->sub_machine_guns_safe_point_conditions[4];
+				sdk::g_config_system->safe_point_conditions[5] = sdk::g_config_system->sub_machine_guns_safe_point_conditions[5];
+				sdk::g_config_system->safe_point_conditions[6] = sdk::g_config_system->sub_machine_guns_safe_point_conditions[6];
+				sdk::g_config_system->safe_point_conditions[7] = sdk::g_config_system->sub_machine_guns_safe_point_conditions[7];
+				sdk::g_config_system->safe_point_type = sdk::g_config_system->sub_machine_guns_safe_point_type;
+				sdk::g_config_system->max_misses_safe_point = sdk::g_config_system->sub_machine_guns_max_misses_safe_point;
+				sdk::g_config_system->double_tap = sdk::g_config_system->sub_machine_guns_double_tap;
+				sdk::g_config_system->max_shift_amount = sdk::g_config_system->sub_machine_guns_max_shift_amount;
+			}
+			else if (g_context->weapon()->item_index() == valve::e_item_index::ak47
+				|| g_context->weapon()->item_index() == valve::e_item_index::aug
+				|| g_context->weapon()->item_index() == valve::e_item_index::famas
+				|| g_context->weapon()->item_index() == valve::e_item_index::galil
+				|| g_context->weapon()->item_index() == valve::e_item_index::m4a1
+				|| g_context->weapon()->item_index() == valve::e_item_index::sg553
+				|| g_context->weapon()->item_index() == valve::e_item_index::m4a1_silencer) {
+				if (!g_menu->m_is_opened)
+					sdk::g_config_system->weapon_selection = 3;
+				sdk::g_config_system->target_hitbox[0] = sdk::g_config_system->rifles_target_hitbox[0];
+				sdk::g_config_system->target_hitbox[1] = sdk::g_config_system->rifles_target_hitbox[1];
+				sdk::g_config_system->target_hitbox[2] = sdk::g_config_system->rifles_target_hitbox[2];
+				sdk::g_config_system->target_hitbox[3] = sdk::g_config_system->rifles_target_hitbox[3];
+				sdk::g_config_system->target_hitbox[4] = sdk::g_config_system->rifles_target_hitbox[4];
+				sdk::g_config_system->target_hitbox[5] = sdk::g_config_system->rifles_target_hitbox[5];
+				sdk::g_config_system->multi_point[0] = sdk::g_config_system->rifles_multi_point[0];
+				sdk::g_config_system->multi_point[1] = sdk::g_config_system->rifles_multi_point[1];
+				sdk::g_config_system->multi_point[2] = sdk::g_config_system->rifles_multi_point[2];
+				sdk::g_config_system->multi_point[3] = sdk::g_config_system->rifles_multi_point[3];
+				sdk::g_config_system->multi_point[4] = sdk::g_config_system->rifles_multi_point[4];
+				sdk::g_config_system->multi_point[5] = sdk::g_config_system->rifles_multi_point[5];
+				sdk::g_config_system->static_scale = sdk::g_config_system->rifles_static_scale;
+				sdk::g_config_system->head_scale = sdk::g_config_system->rifles_head_scale;
+				sdk::g_config_system->body_scale = sdk::g_config_system->rifles_body_scale;
+				sdk::g_config_system->automatic_fire = sdk::g_config_system->rifles_automatic_fire;
+				sdk::g_config_system->silent_aim = sdk::g_config_system->rifles_silent_aim;
+				sdk::g_config_system->minimum_hitchance = sdk::g_config_system->rifles_minimum_hitchance;
+				sdk::g_config_system->minimum_damage = sdk::g_config_system->rifles_minimum_damage;
+				sdk::g_config_system->automatic_penetration = sdk::g_config_system->rifles_automatic_penetration;
+				sdk::g_config_system->penetration_minimum_damage = sdk::g_config_system->rifles_penetration_minimum_damage;
+				sdk::g_config_system->override_minimum_damage = sdk::g_config_system->rifles_override_minimum_damage;
+				sdk::g_config_system->automatic_scope = sdk::g_config_system->rifles_automatic_scope;
+				sdk::g_config_system->maximum_fov = sdk::g_config_system->rifles_maximum_fov;
+				sdk::g_config_system->remove_recoil = sdk::g_config_system->rifles_remove_recoil;
+				sdk::g_config_system->accuracy_boost = sdk::g_config_system->rifles_accuracy_boost;
+				sdk::g_config_system->quick_stop = sdk::g_config_system->rifles_quick_stop;
+				sdk::g_config_system->type = sdk::g_config_system->rifles_type;
+				sdk::g_config_system->between_shots = sdk::g_config_system->rifles_between_shots;
+				sdk::g_config_system->lag_compensation = sdk::g_config_system->rifles_lag_compensation;
+				sdk::g_config_system->body_aim_conditions[0] = sdk::g_config_system->rifles_body_aim_conditions[0];
+				sdk::g_config_system->body_aim_conditions[1] = sdk::g_config_system->rifles_body_aim_conditions[1];
+				sdk::g_config_system->body_aim_conditions[2] = sdk::g_config_system->rifles_body_aim_conditions[2];
+				sdk::g_config_system->body_aim_conditions[3] = sdk::g_config_system->rifles_body_aim_conditions[3];
+				sdk::g_config_system->body_aim_conditions[4] = sdk::g_config_system->rifles_body_aim_conditions[4];
+				sdk::g_config_system->body_aim_conditions[5] = sdk::g_config_system->rifles_body_aim_conditions[5];
+				sdk::g_config_system->body_aim_conditions[6] = sdk::g_config_system->rifles_body_aim_conditions[6];
+				sdk::g_config_system->body_aim_conditions[7] = sdk::g_config_system->rifles_body_aim_conditions[7];
+				sdk::g_config_system->body_aim_conditions[8] = sdk::g_config_system->rifles_body_aim_conditions[8];
+				sdk::g_config_system->max_misses_body_aim = sdk::g_config_system->rifles_max_misses_body_aim;
+				sdk::g_config_system->safe_point_conditions[0] = sdk::g_config_system->rifles_safe_point_conditions[0];
+				sdk::g_config_system->safe_point_conditions[1] = sdk::g_config_system->rifles_safe_point_conditions[1];
+				sdk::g_config_system->safe_point_conditions[2] = sdk::g_config_system->rifles_safe_point_conditions[2];
+				sdk::g_config_system->safe_point_conditions[3] = sdk::g_config_system->rifles_safe_point_conditions[3];
+				sdk::g_config_system->safe_point_conditions[4] = sdk::g_config_system->rifles_safe_point_conditions[4];
+				sdk::g_config_system->safe_point_conditions[5] = sdk::g_config_system->rifles_safe_point_conditions[5];
+				sdk::g_config_system->safe_point_conditions[6] = sdk::g_config_system->rifles_safe_point_conditions[6];
+				sdk::g_config_system->safe_point_conditions[7] = sdk::g_config_system->rifles_safe_point_conditions[7];
+				sdk::g_config_system->safe_point_type = sdk::g_config_system->rifles_safe_point_type;
+				sdk::g_config_system->max_misses_safe_point = sdk::g_config_system->rifles_max_misses_safe_point;
+				sdk::g_config_system->double_tap = sdk::g_config_system->rifles_double_tap;
+				sdk::g_config_system->max_shift_amount = sdk::g_config_system->rifles_max_shift_amount;
+			}
+			else if (g_context->weapon()->item_index() == valve::e_item_index::g3sg1
+				|| g_context->weapon()->item_index() == valve::e_item_index::scar20) {
+				if (!g_menu->m_is_opened)
+					sdk::g_config_system->weapon_selection = 4;
+				sdk::g_config_system->target_hitbox[0] = sdk::g_config_system->auto_snipers_target_hitbox[0];
+				sdk::g_config_system->target_hitbox[1] = sdk::g_config_system->auto_snipers_target_hitbox[1];
+				sdk::g_config_system->target_hitbox[2] = sdk::g_config_system->auto_snipers_target_hitbox[2];
+				sdk::g_config_system->target_hitbox[3] = sdk::g_config_system->auto_snipers_target_hitbox[3];
+				sdk::g_config_system->target_hitbox[4] = sdk::g_config_system->auto_snipers_target_hitbox[4];
+				sdk::g_config_system->target_hitbox[5] = sdk::g_config_system->auto_snipers_target_hitbox[5];
+				sdk::g_config_system->multi_point[0] = sdk::g_config_system->auto_snipers_multi_point[0];
+				sdk::g_config_system->multi_point[1] = sdk::g_config_system->auto_snipers_multi_point[1];
+				sdk::g_config_system->multi_point[2] = sdk::g_config_system->auto_snipers_multi_point[2];
+				sdk::g_config_system->multi_point[3] = sdk::g_config_system->auto_snipers_multi_point[3];
+				sdk::g_config_system->multi_point[4] = sdk::g_config_system->auto_snipers_multi_point[4];
+				sdk::g_config_system->multi_point[5] = sdk::g_config_system->auto_snipers_multi_point[5];
+				sdk::g_config_system->static_scale = sdk::g_config_system->auto_snipers_static_scale;
+				sdk::g_config_system->head_scale = sdk::g_config_system->auto_snipers_head_scale;
+				sdk::g_config_system->body_scale = sdk::g_config_system->auto_snipers_body_scale;
+				sdk::g_config_system->automatic_fire = sdk::g_config_system->auto_snipers_automatic_fire;
+				sdk::g_config_system->silent_aim = sdk::g_config_system->auto_snipers_silent_aim;
+				sdk::g_config_system->minimum_hitchance = sdk::g_config_system->auto_snipers_minimum_hitchance;
+				sdk::g_config_system->minimum_damage = sdk::g_config_system->auto_snipers_minimum_damage;
+				sdk::g_config_system->automatic_penetration = sdk::g_config_system->auto_snipers_automatic_penetration;
+				sdk::g_config_system->penetration_minimum_damage = sdk::g_config_system->auto_snipers_penetration_minimum_damage;
+				sdk::g_config_system->override_minimum_damage = sdk::g_config_system->auto_snipers_override_minimum_damage;
+				sdk::g_config_system->automatic_scope = sdk::g_config_system->auto_snipers_automatic_scope;
+				sdk::g_config_system->maximum_fov = sdk::g_config_system->auto_snipers_maximum_fov;
+				sdk::g_config_system->remove_recoil = sdk::g_config_system->auto_snipers_remove_recoil;
+				sdk::g_config_system->accuracy_boost = sdk::g_config_system->auto_snipers_accuracy_boost;
+				sdk::g_config_system->quick_stop = sdk::g_config_system->auto_snipers_quick_stop;
+				sdk::g_config_system->type = sdk::g_config_system->auto_snipers_type;
+				sdk::g_config_system->between_shots = sdk::g_config_system->auto_snipers_between_shots;
+				sdk::g_config_system->lag_compensation = sdk::g_config_system->auto_snipers_lag_compensation;
+				sdk::g_config_system->body_aim_conditions[0] = sdk::g_config_system->auto_snipers_body_aim_conditions[0];
+				sdk::g_config_system->body_aim_conditions[1] = sdk::g_config_system->auto_snipers_body_aim_conditions[1];
+				sdk::g_config_system->body_aim_conditions[2] = sdk::g_config_system->auto_snipers_body_aim_conditions[2];
+				sdk::g_config_system->body_aim_conditions[3] = sdk::g_config_system->auto_snipers_body_aim_conditions[3];
+				sdk::g_config_system->body_aim_conditions[4] = sdk::g_config_system->auto_snipers_body_aim_conditions[4];
+				sdk::g_config_system->body_aim_conditions[5] = sdk::g_config_system->auto_snipers_body_aim_conditions[5];
+				sdk::g_config_system->body_aim_conditions[6] = sdk::g_config_system->auto_snipers_body_aim_conditions[6];
+				sdk::g_config_system->body_aim_conditions[7] = sdk::g_config_system->auto_snipers_body_aim_conditions[7];
+				sdk::g_config_system->body_aim_conditions[8] = sdk::g_config_system->auto_snipers_body_aim_conditions[8];
+				sdk::g_config_system->max_misses_body_aim = sdk::g_config_system->auto_snipers_max_misses_body_aim;
+				sdk::g_config_system->safe_point_conditions[0] = sdk::g_config_system->auto_snipers_safe_point_conditions[0];
+				sdk::g_config_system->safe_point_conditions[1] = sdk::g_config_system->auto_snipers_safe_point_conditions[1];
+				sdk::g_config_system->safe_point_conditions[2] = sdk::g_config_system->auto_snipers_safe_point_conditions[2];
+				sdk::g_config_system->safe_point_conditions[3] = sdk::g_config_system->auto_snipers_safe_point_conditions[3];
+				sdk::g_config_system->safe_point_conditions[4] = sdk::g_config_system->auto_snipers_safe_point_conditions[4];
+				sdk::g_config_system->safe_point_conditions[5] = sdk::g_config_system->auto_snipers_safe_point_conditions[5];
+				sdk::g_config_system->safe_point_conditions[6] = sdk::g_config_system->auto_snipers_safe_point_conditions[6];
+				sdk::g_config_system->safe_point_conditions[7] = sdk::g_config_system->auto_snipers_safe_point_conditions[7];
+				sdk::g_config_system->safe_point_type = sdk::g_config_system->auto_snipers_safe_point_type;
+				sdk::g_config_system->max_misses_safe_point = sdk::g_config_system->auto_snipers_max_misses_safe_point;
+				sdk::g_config_system->double_tap = sdk::g_config_system->auto_snipers_double_tap;
+				sdk::g_config_system->max_shift_amount = sdk::g_config_system->auto_snipers_max_shift_amount;
+			}
+			else if (g_context->weapon()->item_index() == valve::e_item_index::ssg08) {
+				if (!g_menu->m_is_opened)
+					sdk::g_config_system->weapon_selection = 5;
+				sdk::g_config_system->target_hitbox[0] = sdk::g_config_system->scout_target_hitbox[0];
+				sdk::g_config_system->target_hitbox[1] = sdk::g_config_system->scout_target_hitbox[1];
+				sdk::g_config_system->target_hitbox[2] = sdk::g_config_system->scout_target_hitbox[2];
+				sdk::g_config_system->target_hitbox[3] = sdk::g_config_system->scout_target_hitbox[3];
+				sdk::g_config_system->target_hitbox[4] = sdk::g_config_system->scout_target_hitbox[4];
+				sdk::g_config_system->target_hitbox[5] = sdk::g_config_system->scout_target_hitbox[5];
+				sdk::g_config_system->multi_point[0] = sdk::g_config_system->scout_multi_point[0];
+				sdk::g_config_system->multi_point[1] = sdk::g_config_system->scout_multi_point[1];
+				sdk::g_config_system->multi_point[2] = sdk::g_config_system->scout_multi_point[2];
+				sdk::g_config_system->multi_point[3] = sdk::g_config_system->scout_multi_point[3];
+				sdk::g_config_system->multi_point[4] = sdk::g_config_system->scout_multi_point[4];
+				sdk::g_config_system->multi_point[5] = sdk::g_config_system->scout_multi_point[5];
+				sdk::g_config_system->static_scale = sdk::g_config_system->scout_static_scale;
+				sdk::g_config_system->head_scale = sdk::g_config_system->scout_head_scale;
+				sdk::g_config_system->body_scale = sdk::g_config_system->scout_body_scale;
+				sdk::g_config_system->automatic_fire = sdk::g_config_system->scout_automatic_fire;
+				sdk::g_config_system->silent_aim = sdk::g_config_system->scout_silent_aim;
+				sdk::g_config_system->minimum_hitchance = sdk::g_config_system->scout_minimum_hitchance;
+				sdk::g_config_system->minimum_damage = sdk::g_config_system->scout_minimum_damage;
+				sdk::g_config_system->automatic_penetration = sdk::g_config_system->scout_automatic_penetration;
+				sdk::g_config_system->penetration_minimum_damage = sdk::g_config_system->scout_penetration_minimum_damage;
+				sdk::g_config_system->override_minimum_damage = sdk::g_config_system->scout_override_minimum_damage;
+				sdk::g_config_system->automatic_scope = sdk::g_config_system->scout_automatic_scope;
+				sdk::g_config_system->maximum_fov = sdk::g_config_system->scout_maximum_fov;
+				sdk::g_config_system->remove_recoil = sdk::g_config_system->scout_remove_recoil;
+				sdk::g_config_system->accuracy_boost = sdk::g_config_system->scout_accuracy_boost;
+				sdk::g_config_system->quick_stop = sdk::g_config_system->scout_quick_stop;
+				sdk::g_config_system->type = sdk::g_config_system->scout_type;
+				sdk::g_config_system->between_shots = sdk::g_config_system->scout_between_shots;
+				sdk::g_config_system->lag_compensation = sdk::g_config_system->scout_lag_compensation;
+				sdk::g_config_system->body_aim_conditions[0] = sdk::g_config_system->scout_body_aim_conditions[0];
+				sdk::g_config_system->body_aim_conditions[1] = sdk::g_config_system->scout_body_aim_conditions[1];
+				sdk::g_config_system->body_aim_conditions[2] = sdk::g_config_system->scout_body_aim_conditions[2];
+				sdk::g_config_system->body_aim_conditions[3] = sdk::g_config_system->scout_body_aim_conditions[3];
+				sdk::g_config_system->body_aim_conditions[4] = sdk::g_config_system->scout_body_aim_conditions[4];
+				sdk::g_config_system->body_aim_conditions[5] = sdk::g_config_system->scout_body_aim_conditions[5];
+				sdk::g_config_system->body_aim_conditions[6] = sdk::g_config_system->scout_body_aim_conditions[6];
+				sdk::g_config_system->body_aim_conditions[7] = sdk::g_config_system->scout_body_aim_conditions[7];
+				sdk::g_config_system->body_aim_conditions[8] = sdk::g_config_system->scout_body_aim_conditions[8];
+				sdk::g_config_system->max_misses_body_aim = sdk::g_config_system->scout_max_misses_body_aim;
+				sdk::g_config_system->safe_point_conditions[0] = sdk::g_config_system->scout_safe_point_conditions[0];
+				sdk::g_config_system->safe_point_conditions[1] = sdk::g_config_system->scout_safe_point_conditions[1];
+				sdk::g_config_system->safe_point_conditions[2] = sdk::g_config_system->scout_safe_point_conditions[2];
+				sdk::g_config_system->safe_point_conditions[3] = sdk::g_config_system->scout_safe_point_conditions[3];
+				sdk::g_config_system->safe_point_conditions[4] = sdk::g_config_system->scout_safe_point_conditions[4];
+				sdk::g_config_system->safe_point_conditions[5] = sdk::g_config_system->scout_safe_point_conditions[5];
+				sdk::g_config_system->safe_point_conditions[6] = sdk::g_config_system->scout_safe_point_conditions[6];
+				sdk::g_config_system->safe_point_conditions[7] = sdk::g_config_system->scout_safe_point_conditions[7];
+				sdk::g_config_system->safe_point_type = sdk::g_config_system->scout_safe_point_type;
+				sdk::g_config_system->max_misses_safe_point = sdk::g_config_system->scout_max_misses_safe_point;
+				sdk::g_config_system->double_tap = sdk::g_config_system->scout_double_tap;
+				sdk::g_config_system->max_shift_amount = sdk::g_config_system->scout_max_shift_amount;
+			}
+			else if (g_context->weapon()->item_index() == valve::e_item_index::awp) {
+				if (!g_menu->m_is_opened)
+					sdk::g_config_system->weapon_selection = 6;
+				sdk::g_config_system->target_hitbox[0] = sdk::g_config_system->awp_target_hitbox[0];
+				sdk::g_config_system->target_hitbox[1] = sdk::g_config_system->awp_target_hitbox[1];
+				sdk::g_config_system->target_hitbox[2] = sdk::g_config_system->awp_target_hitbox[2];
+				sdk::g_config_system->target_hitbox[3] = sdk::g_config_system->awp_target_hitbox[3];
+				sdk::g_config_system->target_hitbox[4] = sdk::g_config_system->awp_target_hitbox[4];
+				sdk::g_config_system->target_hitbox[5] = sdk::g_config_system->awp_target_hitbox[5];
+				sdk::g_config_system->multi_point[0] = sdk::g_config_system->awp_multi_point[0];
+				sdk::g_config_system->multi_point[1] = sdk::g_config_system->awp_multi_point[1];
+				sdk::g_config_system->multi_point[2] = sdk::g_config_system->awp_multi_point[2];
+				sdk::g_config_system->multi_point[3] = sdk::g_config_system->awp_multi_point[3];
+				sdk::g_config_system->multi_point[4] = sdk::g_config_system->awp_multi_point[4];
+				sdk::g_config_system->multi_point[5] = sdk::g_config_system->awp_multi_point[5];
+				sdk::g_config_system->static_scale = sdk::g_config_system->awp_static_scale;
+				sdk::g_config_system->head_scale = sdk::g_config_system->awp_head_scale;
+				sdk::g_config_system->body_scale = sdk::g_config_system->awp_body_scale;
+				sdk::g_config_system->automatic_fire = sdk::g_config_system->awp_automatic_fire;
+				sdk::g_config_system->silent_aim = sdk::g_config_system->awp_silent_aim;
+				sdk::g_config_system->minimum_hitchance = sdk::g_config_system->awp_minimum_hitchance;
+				sdk::g_config_system->minimum_damage = sdk::g_config_system->awp_minimum_damage;
+				sdk::g_config_system->automatic_penetration = sdk::g_config_system->awp_automatic_penetration;
+				sdk::g_config_system->penetration_minimum_damage = sdk::g_config_system->awp_penetration_minimum_damage;
+				sdk::g_config_system->override_minimum_damage = sdk::g_config_system->awp_override_minimum_damage;
+				sdk::g_config_system->automatic_scope = sdk::g_config_system->awp_automatic_scope;
+				sdk::g_config_system->maximum_fov = sdk::g_config_system->awp_maximum_fov;
+				sdk::g_config_system->remove_recoil = sdk::g_config_system->awp_remove_recoil;
+				sdk::g_config_system->accuracy_boost = sdk::g_config_system->awp_accuracy_boost;
+				sdk::g_config_system->quick_stop = sdk::g_config_system->awp_quick_stop;
+				sdk::g_config_system->type = sdk::g_config_system->awp_type;
+				sdk::g_config_system->between_shots = sdk::g_config_system->awp_between_shots;
+				sdk::g_config_system->lag_compensation = sdk::g_config_system->awp_lag_compensation;
+				sdk::g_config_system->body_aim_conditions[0] = sdk::g_config_system->awp_body_aim_conditions[0];
+				sdk::g_config_system->body_aim_conditions[1] = sdk::g_config_system->awp_body_aim_conditions[1];
+				sdk::g_config_system->body_aim_conditions[2] = sdk::g_config_system->awp_body_aim_conditions[2];
+				sdk::g_config_system->body_aim_conditions[3] = sdk::g_config_system->awp_body_aim_conditions[3];
+				sdk::g_config_system->body_aim_conditions[4] = sdk::g_config_system->awp_body_aim_conditions[4];
+				sdk::g_config_system->body_aim_conditions[5] = sdk::g_config_system->awp_body_aim_conditions[5];
+				sdk::g_config_system->body_aim_conditions[6] = sdk::g_config_system->awp_body_aim_conditions[6];
+				sdk::g_config_system->body_aim_conditions[7] = sdk::g_config_system->awp_body_aim_conditions[7];
+				sdk::g_config_system->body_aim_conditions[8] = sdk::g_config_system->awp_body_aim_conditions[8];
+				sdk::g_config_system->max_misses_body_aim = sdk::g_config_system->awp_max_misses_body_aim;
+				sdk::g_config_system->safe_point_conditions[0] = sdk::g_config_system->awp_safe_point_conditions[0];
+				sdk::g_config_system->safe_point_conditions[1] = sdk::g_config_system->awp_safe_point_conditions[1];
+				sdk::g_config_system->safe_point_conditions[2] = sdk::g_config_system->awp_safe_point_conditions[2];
+				sdk::g_config_system->safe_point_conditions[3] = sdk::g_config_system->awp_safe_point_conditions[3];
+				sdk::g_config_system->safe_point_conditions[4] = sdk::g_config_system->awp_safe_point_conditions[4];
+				sdk::g_config_system->safe_point_conditions[5] = sdk::g_config_system->awp_safe_point_conditions[5];
+				sdk::g_config_system->safe_point_conditions[6] = sdk::g_config_system->awp_safe_point_conditions[6];
+				sdk::g_config_system->safe_point_conditions[7] = sdk::g_config_system->awp_safe_point_conditions[7];
+				sdk::g_config_system->safe_point_type = sdk::g_config_system->awp_safe_point_type;
+				sdk::g_config_system->max_misses_safe_point = sdk::g_config_system->awp_max_misses_safe_point;
+				sdk::g_config_system->double_tap = sdk::g_config_system->awp_double_tap;
+				sdk::g_config_system->max_shift_amount = sdk::g_config_system->awp_max_shift_amount;
+			}
+			else if (g_context->weapon()->item_index() == valve::e_item_index::xm1014
+				|| g_context->weapon()->item_index() == valve::e_item_index::mag7
+				|| g_context->weapon()->item_index() == valve::e_item_index::sawedoff
+				|| g_context->weapon()->item_index() == valve::e_item_index::nova) {
+				if (!g_menu->m_is_opened)
+					sdk::g_config_system->weapon_selection = 7;
+				sdk::g_config_system->target_hitbox[0] = sdk::g_config_system->shotguns_target_hitbox[0];
+				sdk::g_config_system->target_hitbox[1] = sdk::g_config_system->shotguns_target_hitbox[1];
+				sdk::g_config_system->target_hitbox[2] = sdk::g_config_system->shotguns_target_hitbox[2];
+				sdk::g_config_system->target_hitbox[3] = sdk::g_config_system->shotguns_target_hitbox[3];
+				sdk::g_config_system->target_hitbox[4] = sdk::g_config_system->shotguns_target_hitbox[4];
+				sdk::g_config_system->target_hitbox[5] = sdk::g_config_system->shotguns_target_hitbox[5];
+				sdk::g_config_system->multi_point[0] = sdk::g_config_system->shotguns_multi_point[0];
+				sdk::g_config_system->multi_point[1] = sdk::g_config_system->shotguns_multi_point[1];
+				sdk::g_config_system->multi_point[2] = sdk::g_config_system->shotguns_multi_point[2];
+				sdk::g_config_system->multi_point[3] = sdk::g_config_system->shotguns_multi_point[3];
+				sdk::g_config_system->multi_point[4] = sdk::g_config_system->shotguns_multi_point[4];
+				sdk::g_config_system->multi_point[5] = sdk::g_config_system->shotguns_multi_point[5];
+				sdk::g_config_system->static_scale = sdk::g_config_system->shotguns_static_scale;
+				sdk::g_config_system->head_scale = sdk::g_config_system->shotguns_head_scale;
+				sdk::g_config_system->body_scale = sdk::g_config_system->shotguns_body_scale;
+				sdk::g_config_system->automatic_fire = sdk::g_config_system->shotguns_automatic_fire;
+				sdk::g_config_system->silent_aim = sdk::g_config_system->shotguns_silent_aim;
+				sdk::g_config_system->minimum_hitchance = sdk::g_config_system->shotguns_minimum_hitchance;
+				sdk::g_config_system->minimum_damage = sdk::g_config_system->shotguns_minimum_damage;
+				sdk::g_config_system->automatic_penetration = sdk::g_config_system->shotguns_automatic_penetration;
+				sdk::g_config_system->penetration_minimum_damage = sdk::g_config_system->shotguns_penetration_minimum_damage;
+				sdk::g_config_system->override_minimum_damage = sdk::g_config_system->shotguns_override_minimum_damage;
+				sdk::g_config_system->automatic_scope = sdk::g_config_system->shotguns_automatic_scope;
+				sdk::g_config_system->maximum_fov = sdk::g_config_system->shotguns_maximum_fov;
+				sdk::g_config_system->remove_recoil = sdk::g_config_system->shotguns_remove_recoil;
+				sdk::g_config_system->accuracy_boost = sdk::g_config_system->shotguns_accuracy_boost;
+				sdk::g_config_system->quick_stop = sdk::g_config_system->shotguns_quick_stop;
+				sdk::g_config_system->type = sdk::g_config_system->shotguns_type;
+				sdk::g_config_system->between_shots = sdk::g_config_system->shotguns_between_shots;
+				sdk::g_config_system->lag_compensation = sdk::g_config_system->shotguns_lag_compensation;
+				sdk::g_config_system->body_aim_conditions[0] = sdk::g_config_system->shotguns_body_aim_conditions[0];
+				sdk::g_config_system->body_aim_conditions[1] = sdk::g_config_system->shotguns_body_aim_conditions[1];
+				sdk::g_config_system->body_aim_conditions[2] = sdk::g_config_system->shotguns_body_aim_conditions[2];
+				sdk::g_config_system->body_aim_conditions[3] = sdk::g_config_system->shotguns_body_aim_conditions[3];
+				sdk::g_config_system->body_aim_conditions[4] = sdk::g_config_system->shotguns_body_aim_conditions[4];
+				sdk::g_config_system->body_aim_conditions[5] = sdk::g_config_system->shotguns_body_aim_conditions[5];
+				sdk::g_config_system->body_aim_conditions[6] = sdk::g_config_system->shotguns_body_aim_conditions[6];
+				sdk::g_config_system->body_aim_conditions[7] = sdk::g_config_system->shotguns_body_aim_conditions[7];
+				sdk::g_config_system->body_aim_conditions[8] = sdk::g_config_system->shotguns_body_aim_conditions[8];
+				sdk::g_config_system->max_misses_body_aim = sdk::g_config_system->shotguns_max_misses_body_aim;
+				sdk::g_config_system->safe_point_conditions[0] = sdk::g_config_system->shotguns_safe_point_conditions[0];
+				sdk::g_config_system->safe_point_conditions[1] = sdk::g_config_system->shotguns_safe_point_conditions[1];
+				sdk::g_config_system->safe_point_conditions[2] = sdk::g_config_system->shotguns_safe_point_conditions[2];
+				sdk::g_config_system->safe_point_conditions[3] = sdk::g_config_system->shotguns_safe_point_conditions[3];
+				sdk::g_config_system->safe_point_conditions[4] = sdk::g_config_system->shotguns_safe_point_conditions[4];
+				sdk::g_config_system->safe_point_conditions[5] = sdk::g_config_system->shotguns_safe_point_conditions[5];
+				sdk::g_config_system->safe_point_conditions[6] = sdk::g_config_system->shotguns_safe_point_conditions[6];
+				sdk::g_config_system->safe_point_conditions[7] = sdk::g_config_system->shotguns_safe_point_conditions[7];
+				sdk::g_config_system->safe_point_type = sdk::g_config_system->shotguns_safe_point_type;
+				sdk::g_config_system->max_misses_safe_point = sdk::g_config_system->shotguns_max_misses_safe_point;
+				sdk::g_config_system->double_tap = sdk::g_config_system->shotguns_double_tap;
+				sdk::g_config_system->max_shift_amount = sdk::g_config_system->shotguns_max_shift_amount;
+			}
+			else if (g_context->weapon()->item_index() == valve::e_item_index::m249
+				|| g_context->weapon()->item_index() == valve::e_item_index::negev) {
+				if (!g_menu->m_is_opened)
+					sdk::g_config_system->weapon_selection = 8;
+				sdk::g_config_system->target_hitbox[0] = sdk::g_config_system->machine_guns_target_hitbox[0];
+				sdk::g_config_system->target_hitbox[1] = sdk::g_config_system->machine_guns_target_hitbox[1];
+				sdk::g_config_system->target_hitbox[2] = sdk::g_config_system->machine_guns_target_hitbox[2];
+				sdk::g_config_system->target_hitbox[3] = sdk::g_config_system->machine_guns_target_hitbox[3];
+				sdk::g_config_system->target_hitbox[4] = sdk::g_config_system->machine_guns_target_hitbox[4];
+				sdk::g_config_system->target_hitbox[5] = sdk::g_config_system->machine_guns_target_hitbox[5];
+				sdk::g_config_system->multi_point[0] = sdk::g_config_system->machine_guns_multi_point[0];
+				sdk::g_config_system->multi_point[1] = sdk::g_config_system->machine_guns_multi_point[1];
+				sdk::g_config_system->multi_point[2] = sdk::g_config_system->machine_guns_multi_point[2];
+				sdk::g_config_system->multi_point[3] = sdk::g_config_system->machine_guns_multi_point[3];
+				sdk::g_config_system->multi_point[4] = sdk::g_config_system->machine_guns_multi_point[4];
+				sdk::g_config_system->multi_point[5] = sdk::g_config_system->machine_guns_multi_point[5];
+				sdk::g_config_system->static_scale = sdk::g_config_system->machine_guns_static_scale;
+				sdk::g_config_system->head_scale = sdk::g_config_system->machine_guns_head_scale;
+				sdk::g_config_system->body_scale = sdk::g_config_system->machine_guns_body_scale;
+				sdk::g_config_system->automatic_fire = sdk::g_config_system->machine_guns_automatic_fire;
+				sdk::g_config_system->silent_aim = sdk::g_config_system->machine_guns_silent_aim;
+				sdk::g_config_system->minimum_hitchance = sdk::g_config_system->machine_guns_minimum_hitchance;
+				sdk::g_config_system->minimum_damage = sdk::g_config_system->machine_guns_minimum_damage;
+				sdk::g_config_system->automatic_penetration = sdk::g_config_system->machine_guns_automatic_penetration;
+				sdk::g_config_system->penetration_minimum_damage = sdk::g_config_system->machine_guns_penetration_minimum_damage;
+				sdk::g_config_system->override_minimum_damage = sdk::g_config_system->machine_guns_override_minimum_damage;
+				sdk::g_config_system->automatic_scope = sdk::g_config_system->machine_guns_automatic_scope;
+				sdk::g_config_system->maximum_fov = sdk::g_config_system->machine_guns_maximum_fov;
+				sdk::g_config_system->remove_recoil = sdk::g_config_system->machine_guns_remove_recoil;
+				sdk::g_config_system->accuracy_boost = sdk::g_config_system->machine_guns_accuracy_boost;
+				sdk::g_config_system->quick_stop = sdk::g_config_system->machine_guns_quick_stop;
+				sdk::g_config_system->type = sdk::g_config_system->machine_guns_type;
+				sdk::g_config_system->between_shots = sdk::g_config_system->machine_guns_between_shots;
+				sdk::g_config_system->lag_compensation = sdk::g_config_system->machine_guns_lag_compensation;
+				sdk::g_config_system->body_aim_conditions[0] = sdk::g_config_system->machine_guns_body_aim_conditions[0];
+				sdk::g_config_system->body_aim_conditions[1] = sdk::g_config_system->machine_guns_body_aim_conditions[1];
+				sdk::g_config_system->body_aim_conditions[2] = sdk::g_config_system->machine_guns_body_aim_conditions[2];
+				sdk::g_config_system->body_aim_conditions[3] = sdk::g_config_system->machine_guns_body_aim_conditions[3];
+				sdk::g_config_system->body_aim_conditions[4] = sdk::g_config_system->machine_guns_body_aim_conditions[4];
+				sdk::g_config_system->body_aim_conditions[5] = sdk::g_config_system->machine_guns_body_aim_conditions[5];
+				sdk::g_config_system->body_aim_conditions[6] = sdk::g_config_system->machine_guns_body_aim_conditions[6];
+				sdk::g_config_system->body_aim_conditions[7] = sdk::g_config_system->machine_guns_body_aim_conditions[7];
+				sdk::g_config_system->body_aim_conditions[8] = sdk::g_config_system->machine_guns_body_aim_conditions[8];
+				sdk::g_config_system->max_misses_body_aim = sdk::g_config_system->machine_guns_max_misses_body_aim;
+				sdk::g_config_system->safe_point_conditions[0] = sdk::g_config_system->machine_guns_safe_point_conditions[0];
+				sdk::g_config_system->safe_point_conditions[1] = sdk::g_config_system->machine_guns_safe_point_conditions[1];
+				sdk::g_config_system->safe_point_conditions[2] = sdk::g_config_system->machine_guns_safe_point_conditions[2];
+				sdk::g_config_system->safe_point_conditions[3] = sdk::g_config_system->machine_guns_safe_point_conditions[3];
+				sdk::g_config_system->safe_point_conditions[4] = sdk::g_config_system->machine_guns_safe_point_conditions[4];
+				sdk::g_config_system->safe_point_conditions[5] = sdk::g_config_system->machine_guns_safe_point_conditions[5];
+				sdk::g_config_system->safe_point_conditions[6] = sdk::g_config_system->machine_guns_safe_point_conditions[6];
+				sdk::g_config_system->safe_point_conditions[7] = sdk::g_config_system->machine_guns_safe_point_conditions[7];
+				sdk::g_config_system->safe_point_type = sdk::g_config_system->machine_guns_safe_point_type;
+				sdk::g_config_system->max_misses_safe_point = sdk::g_config_system->machine_guns_max_misses_safe_point;
+				sdk::g_config_system->double_tap = sdk::g_config_system->machine_guns_double_tap;
+				sdk::g_config_system->max_shift_amount = sdk::g_config_system->machine_guns_max_shift_amount;
+			}
+			/*else if (g_context->weapon()->item_index() == valve::e_item_index::taser) {
+				if (!g_menu->m_is_opened)
+					sdk::g_config_system->weapon_selection = 9;
+				sdk::g_config_system->target_hitbox[0] = sdk::g_config_system->taser_target_hitbox[0];
+				sdk::g_config_system->target_hitbox[1] = sdk::g_config_system->taser_target_hitbox[1];
+				sdk::g_config_system->target_hitbox[2] = sdk::g_config_system->taser_target_hitbox[2];
+				sdk::g_config_system->target_hitbox[3] = sdk::g_config_system->taser_target_hitbox[3];
+				sdk::g_config_system->target_hitbox[4] = sdk::g_config_system->taser_target_hitbox[4];
+				sdk::g_config_system->target_hitbox[5] = sdk::g_config_system->taser_target_hitbox[5];
+				sdk::g_config_system->multi_point[0] = sdk::g_config_system->taser_multi_point[0];
+				sdk::g_config_system->multi_point[1] = sdk::g_config_system->taser_multi_point[1];
+				sdk::g_config_system->multi_point[2] = sdk::g_config_system->taser_multi_point[2];
+				sdk::g_config_system->multi_point[3] = sdk::g_config_system->taser_multi_point[3];
+				sdk::g_config_system->multi_point[4] = sdk::g_config_system->taser_multi_point[4];
+				sdk::g_config_system->multi_point[5] = sdk::g_config_system->taser_multi_point[5];
+				sdk::g_config_system->static_scale = sdk::g_config_system->taser_static_scale;
+				sdk::g_config_system->head_scale = sdk::g_config_system->taser_head_scale;
+				sdk::g_config_system->body_scale = sdk::g_config_system->taser_body_scale;
+				sdk::g_config_system->automatic_fire = sdk::g_config_system->taser_automatic_fire;
+				sdk::g_config_system->silent_aim = sdk::g_config_system->taser_silent_aim;
+				sdk::g_config_system->minimum_hitchance = sdk::g_config_system->taser_minimum_hitchance;
+				sdk::g_config_system->minimum_damage = sdk::g_config_system->taser_minimum_damage;
+				sdk::g_config_system->automatic_penetration = sdk::g_config_system->taser_automatic_penetration;
+				sdk::g_config_system->penetration_minimum_damage = sdk::g_config_system->taser_penetration_minimum_damage;
+				sdk::g_config_system->override_minimum_damage = sdk::g_config_system->taser_override_minimum_damage;
+				sdk::g_config_system->automatic_scope = sdk::g_config_system->taser_automatic_scope;
+				sdk::g_config_system->maximum_fov = sdk::g_config_system->taser_maximum_fov;
+				sdk::g_config_system->remove_recoil = sdk::g_config_system->taser_remove_recoil;
+				sdk::g_config_system->accuracy_boost = sdk::g_config_system->taser_accuracy_boost;
+				sdk::g_config_system->quick_stop = sdk::g_config_system->taser_quick_stop;
+				sdk::g_config_system->type = sdk::g_config_system->taser_type;
+				sdk::g_config_system->between_shots = sdk::g_config_system->taser_between_shots;
+				sdk::g_config_system->lag_compensation = sdk::g_config_system->taser_lag_compensation;
+				sdk::g_config_system->body_aim_conditions[0] = sdk::g_config_system->taser_body_aim_conditions[0];
+				sdk::g_config_system->body_aim_conditions[1] = sdk::g_config_system->taser_body_aim_conditions[1];
+				sdk::g_config_system->body_aim_conditions[2] = sdk::g_config_system->taser_body_aim_conditions[2];
+				sdk::g_config_system->body_aim_conditions[3] = sdk::g_config_system->taser_body_aim_conditions[3];
+				sdk::g_config_system->body_aim_conditions[4] = sdk::g_config_system->taser_body_aim_conditions[4];
+				sdk::g_config_system->body_aim_conditions[5] = sdk::g_config_system->taser_body_aim_conditions[5];
+				sdk::g_config_system->body_aim_conditions[6] = sdk::g_config_system->taser_body_aim_conditions[6];
+				sdk::g_config_system->body_aim_conditions[7] = sdk::g_config_system->taser_body_aim_conditions[7];
+				sdk::g_config_system->body_aim_conditions[8] = sdk::g_config_system->taser_body_aim_conditions[8];
+				sdk::g_config_system->max_misses_body_aim = sdk::g_config_system->taser_max_misses_body_aim;
+				sdk::g_config_system->safe_point_conditions[0] = sdk::g_config_system->taser_safe_point_conditions[0];
+				sdk::g_config_system->safe_point_conditions[1] = sdk::g_config_system->taser_safe_point_conditions[1];
+				sdk::g_config_system->safe_point_conditions[2] = sdk::g_config_system->taser_safe_point_conditions[2];
+				sdk::g_config_system->safe_point_conditions[3] = sdk::g_config_system->taser_safe_point_conditions[3];
+				sdk::g_config_system->safe_point_conditions[4] = sdk::g_config_system->taser_safe_point_conditions[4];
+				sdk::g_config_system->safe_point_conditions[5] = sdk::g_config_system->taser_safe_point_conditions[5];
+				sdk::g_config_system->safe_point_conditions[6] = sdk::g_config_system->taser_safe_point_conditions[6];
+				sdk::g_config_system->safe_point_conditions[7] = sdk::g_config_system->taser_safe_point_conditions[7];
+				sdk::g_config_system->safe_point_type = sdk::g_config_system->taser_safe_point_type;
+				sdk::g_config_system->max_misses_safe_point = sdk::g_config_system->taser_max_misses_safe_point;
+				sdk::g_config_system->double_tap = sdk::g_config_system->taser_double_tap;
+				sdk::g_config_system->max_shift_amount = sdk::g_config_system->taser_max_shift_amount;
+			}*/
+		}
 
 		static auto prev_spawn_time = valve::g_local_player->spawn_time();
 		if (prev_spawn_time != valve::g_local_player->spawn_time()) {
@@ -600,6 +1178,14 @@ namespace supremacy::hooks
 
 					if (sdk::g_config_system->remove_recoil)
 						user_cmd.m_view_angles -= valve::g_local_player->aim_punch() * g_context->cvars().m_weapon_recoil_scale->get_float();
+
+					user_cmd.m_view_angles.x = std::remainder(user_cmd.m_view_angles.x, 360.f);
+					user_cmd.m_view_angles.y = std::remainder(user_cmd.m_view_angles.y, 360.f);
+					user_cmd.m_view_angles.z = std::remainder(user_cmd.m_view_angles.z, 360.f);
+
+					user_cmd.m_view_angles.x = std::clamp(user_cmd.m_view_angles.x, -89.f, 89.f);
+					user_cmd.m_view_angles.y = std::clamp(user_cmd.m_view_angles.y, -180.f, 180.f);
+					user_cmd.m_view_angles.z = std::clamp(user_cmd.m_view_angles.z, -90.f, 90.f);
 				}
 			}
 
@@ -607,7 +1193,10 @@ namespace supremacy::hooks
 
 			hacks::g_movement->normalize(user_cmd);
 
-			hacks::g_movement->rotate(user_cmd, hacks::g_eng_pred->old_user_cmd().m_view_angles, valve::g_local_player->move_type());
+			hacks::g_movement->rotate(
+				user_cmd, hacks::g_eng_pred->old_user_cmd().m_view_angles,
+				valve::g_local_player->flags(), valve::g_local_player->move_type()
+			);
 
 			if (g_context->flags() & e_context_flags::can_shoot
 				&& g_context->will_shoot(g_context->weapon(), user_cmd)) {
@@ -625,7 +1214,7 @@ namespace supremacy::hooks
 					anim_data.m_shot_valid_wpn = false;
 
 				if (anim_data.m_shot_valid_wpn) {
-					if (!hacks::g_movement->should_fake_duck()) {						
+					if (!hacks::g_movement->should_fake_duck()) {
 						hacks::g_exploits->cur_shift_amount() = hacks::g_exploits->next_shift_amount();
 
 						g_context->flags() &= ~e_context_flags::choke;
@@ -648,51 +1237,66 @@ namespace supremacy::hooks
 							if (const auto player_info = valve::g_engine->player_info(aim_target.m_entry->m_player->index()); player_info.has_value()) {
 #ifdef ALPHA
 								util::g_notify->print_logo();
-								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("fired shot at %s (hc: %d | dmg: %d | aimed: %s | sp: %s | bt: %d | type: %d | side: %d | anim: %d | lc: %s | choked: %d)\n"),
+								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("fired shot at %s (hc: %d | dmg: %d | aimed: %s | center: %s | sp: %s | bt: %d | type: %d | side: %d | lc: %s | choked: %d)\n"),
 									player_info.value().m_name,
 									aim_target.m_hit_chance,
 									aim_target.m_dmg,
 									util::translate_hitgroup(aim_target.m_point.m_hitgroup),
+									util::bool_as_text(aim_target.m_point.m_center),
 									util::translate_safe_points(aim_target.m_point.m_intersections, aim_target.m_point.m_low_intersections),
 									aim_target.m_lag_record->m_extrapolated ? std::min(0, -aim_target.m_lag_record->m_extrapolate_ticks) : std::max(0, (valve::g_global_vars->m_tick_count - valve::to_ticks(aim_target.m_lag_record->m_sim_time))),
 									aim_target.m_lag_record->m_type,
 									aim_target.m_lag_record->m_side,
-									aim_target.m_lag_record->m_processed_velocity,
 									util::bool_as_text(aim_target.m_lag_record->m_broke_lc),
 									aim_target.m_lag_record->m_sim_ticks - 1
 								);
+
+								util::g_notify->print_logo();
+								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("%.4f | %.4f | %.4f | %.4f\n"), aim_target.m_lag_record->m_server_rate * 1000.f, aim_target.m_lag_record->m_negative_rate * 1000.f, aim_target.m_lag_record->m_positive_rate * 1000.f, aim_target.m_lag_record->m_zero_rate * 1000.f);
+								util::g_notify->print_logo();
+								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("%.4f | %.4f\n"), aim_target.m_lag_record->m_low_negative_rate * 1000.f, aim_target.m_lag_record->m_low_positive_rate * 1000.f);
 #else
 #ifdef _DEBUG
 								util::g_notify->print_logo();
-								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("fired shot at %s (hc: %d | dmg: %d | aimed: %s | sp: %s | bt: %d | type: %d | side: %d | anim: %d | lc: %s | choked: %d)\n"),
+								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("fired shot at %s (hc: %d | dmg: %d | aimed: %s | center: %s | sp: %s | bt: %d | type: %d | side: %d | lc: %s | choked: %d)\n"),
 									player_info.value().m_name,
 									aim_target.m_hit_chance,
 									aim_target.m_dmg,
 									util::translate_hitgroup(aim_target.m_point.m_hitgroup),
+									util::bool_as_text(aim_target.m_point.m_center),
 									util::translate_safe_points(aim_target.m_point.m_intersections, aim_target.m_point.m_low_intersections),
 									aim_target.m_lag_record->m_extrapolated ? std::min(0, -aim_target.m_lag_record->m_extrapolate_ticks) : std::max(0, (valve::g_global_vars->m_tick_count - valve::to_ticks(aim_target.m_lag_record->m_sim_time))),
 									aim_target.m_lag_record->m_type,
 									aim_target.m_lag_record->m_side,
-									aim_target.m_lag_record->m_processed_velocity,
 									util::bool_as_text(aim_target.m_lag_record->m_broke_lc),
 									aim_target.m_lag_record->m_sim_ticks - 1
 								);
+
+								util::g_notify->print_logo();
+								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("%.4f | %.4f | %.4f | %.4f\n"), aim_target.m_lag_record->m_server_rate * 1000.f, aim_target.m_lag_record->m_negative_rate * 1000.f, aim_target.m_lag_record->m_positive_rate * 1000.f, aim_target.m_lag_record->m_zero_rate * 1000.f);
+								util::g_notify->print_logo();
+								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("%.4f | %.4f\n"), aim_target.m_lag_record->m_low_negative_rate * 1000.f, aim_target.m_lag_record->m_low_positive_rate * 1000.f);
 #else
 								if (g_context->debug_build) {
 									util::g_notify->print_logo();
-									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("fired shot at %s (hc: %d | dmg: %d | aimed: %s | sp: %s | bt: %d | type: %d | side: %d | anim: %d | lc: %s | choked: %d)\n"),
+									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("fired shot at %s (hc: %d | dmg: %d | aimed: %s | center: %s | sp: %s | bt: %d | type: %d | side: %d | lc: %s | choked: %d)\n"),
 										player_info.value().m_name,
 										aim_target.m_hit_chance,
 										aim_target.m_dmg,
 										util::translate_hitgroup(aim_target.m_point.m_hitgroup),
+										util::bool_as_text(aim_target.m_point.m_center),
 										util::translate_safe_points(aim_target.m_point.m_intersections, aim_target.m_point.m_low_intersections),
 										aim_target.m_lag_record->m_extrapolated ? std::min(0, -aim_target.m_lag_record->m_extrapolate_ticks) : std::max(0, (valve::g_global_vars->m_tick_count - valve::to_ticks(aim_target.m_lag_record->m_sim_time))),
 										aim_target.m_lag_record->m_type,
 										aim_target.m_lag_record->m_side,
-										aim_target.m_lag_record->m_processed_velocity,
 										util::bool_as_text(aim_target.m_lag_record->m_broke_lc),
 										aim_target.m_lag_record->m_sim_ticks - 1
 									);
+
+									util::g_notify->print_logo();
+									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("%.4f | %.4f | %.4f | %.4f\n"), aim_target.m_lag_record->m_server_rate * 1000.f, aim_target.m_lag_record->m_negative_rate * 1000.f, aim_target.m_lag_record->m_positive_rate * 1000.f, aim_target.m_lag_record->m_zero_rate * 1000.f);
+									util::g_notify->print_logo();
+									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("%.4f | %.4f\n"), aim_target.m_lag_record->m_low_negative_rate * 1000.f, aim_target.m_lag_record->m_low_positive_rate * 1000.f);
 								}
 #endif
 #endif
@@ -703,9 +1307,9 @@ namespace supremacy::hooks
 							g_context->shoot_pos(), nullptr,
 							hacks::g_exploits->next_shift_amount()
 						);
-				}	
+				}
 			}
-			
+
 			hacks::g_anim_sync->update_local_real(user_cmd);
 
 			hacks::g_eng_pred->restore();
@@ -717,7 +1321,30 @@ namespace supremacy::hooks
 
 			send_packet = !(g_context->flags() & e_context_flags::choke);
 
-			hacks::g_movement->peek_assistence(wish_angles, user_cmd);
+			if (!key_handler::check_key(sdk::g_config_system->peek_assistence_key, sdk::g_config_system->peek_assistence_key_style)) {
+				g_context->should_return() = false;
+				g_context->start_position() = vec3_t{};
+			}
+			else if (g_context->start_position().x == 0.f
+				|| g_context->start_position().y == 0.f
+				|| g_context->start_position().z == 0.f
+				) {
+				g_context->start_position() = valve::g_local_player->abs_origin();
+
+				if (!(hacks::g_eng_pred->local_data().at((user_cmd.m_number) % 150).m_net_vars.m_flags & valve::e_ent_flags::on_ground)) {
+					valve::ray_t ray(g_context->start_position(), g_context->start_position() - vec3_t(0.f, 0.f, 1000.f));
+					valve::trace_filter_world_only_t filter;
+					valve::trace_t trace;
+
+					valve::g_engine_trace->trace_ray(ray, valve::e_mask::solid, &filter, &trace);
+
+					if (trace.m_fraction < 1.f)
+						g_context->start_position() = trace.m_end_pos + vec3_t(0.f, 0.f, 2.f);
+				}
+			}
+			else if ((g_context->flags() & e_context_flags::can_shoot
+				&& g_context->will_shoot(valve::g_local_player->weapon(), user_cmd)))
+				g_context->should_return() = true;
 		}
 		else {
 			send_packet = false;
@@ -788,8 +1415,10 @@ namespace supremacy::hooks
 		hacks::g_eng_pred->last_frame_stage() = stage;
 
 		if (!valve::g_local_player
-			|| !valve::g_engine->in_game())
+			|| !valve::g_engine->in_game()) {
+			hacks::g_shots->elements().clear();
 			return orig_frame_stage_notify(stage);
+		}
 
 		if (stage == valve::e_frame_stage::render_start) {
 			hacks::g_visuals->on_render_start();
@@ -871,7 +1500,7 @@ namespace supremacy::hooks
 			hacks::g_visuals->on_render_end();
 		else if (stage == valve::e_frame_stage::net_update_post_data_update_start)
 			hacks::g_visuals->on_post_data_update_start();
-		
+
 		if (const auto view_model = valve::g_local_player->view_model()) {
 			static float cycle{}, anim_time{};
 
@@ -883,7 +1512,7 @@ namespace supremacy::hooks
 			cycle = view_model->cycle();
 			anim_time = view_model->anim_time();
 		}
-	
+			
 		hacks::g_visuals->kill_feed();
 	}
 
@@ -896,16 +1525,16 @@ namespace supremacy::hooks
 			return orig_update_client_side_anim(ecx, edx);
 
 		if (!g_context->allow_anim_update()) {
-			const auto mdl_bone_counter = **reinterpret_cast<unsigned long**>(
+			const auto most_recent_model_bone_counter = **reinterpret_cast<unsigned long**>(
 				g_context->addresses().m_invalidate_bone_cache + 0xau
 				);
 
-			static auto prev_mdl_bone_counter = ecx->mdl_bone_counter();
+			static auto prev_most_recent_model_bone_counter = ecx->most_recent_model_bone_counter();
 
-			if (mdl_bone_counter != prev_mdl_bone_counter)
+			if (most_recent_model_bone_counter != prev_most_recent_model_bone_counter)
 				hacks::g_anim_sync->setup_local_bones();
 
-			prev_mdl_bone_counter = mdl_bone_counter;
+			prev_most_recent_model_bone_counter = most_recent_model_bone_counter;
 
 			return;
 		}
@@ -1062,10 +1691,6 @@ namespace supremacy::hooks
 	void __fastcall packet_start(
 		const std::uintptr_t ecx, const std::uintptr_t edx, const int in_seq, const int out_acked
 	) {
-		if (!valve::g_local_player
-			|| !valve::g_local_player->alive())
-			return orig_packet_start(ecx, edx, in_seq, out_acked);
-
 		auto& sented_cmds = g_context->sented_cmds();
 		if (sented_cmds.empty()
 			|| std::find(sented_cmds.rbegin(), sented_cmds.rend(), out_acked) == sented_cmds.rend())
@@ -1085,10 +1710,6 @@ namespace supremacy::hooks
 	}
 
 	void __fastcall packet_end(const std::uintptr_t ecx, const std::uintptr_t edx) {
-		if (!valve::g_local_player
-			|| valve::g_client_state->m_server_tick != valve::g_client_state->m_delta_tick)
-			return orig_packet_end(ecx, edx);
-
 		const auto& local_data = hacks::g_eng_pred->local_data().at(valve::g_client_state->m_cmd_ack % 150);
 		if (local_data.m_spawn_time == valve::g_local_player->spawn_time()
 			&& local_data.m_shift_amount > 0
@@ -1111,7 +1732,7 @@ namespace supremacy::hooks
 
 			return hacks::g_eng_pred->net_vars().at(user_cmd.m_number % 150).store(user_cmd.m_number);
 		}
-		
+
 		if (user_cmd.m_number == (valve::g_client_state->m_cmd_ack + 1))
 			ecx->velocity_modifier() = hacks::g_eng_pred->net_velocity_modifier();
 
@@ -1162,15 +1783,6 @@ namespace supremacy::hooks
 		ecx->sim_time() = backup_sim_time;
 	}
 
-	int process_interpolated_list() {
-		static auto allow_to_extrp = *(bool**)(g_context->addresses().m_allow_extrapolation + 0x1u);
-
-		if (allow_to_extrp)
-			*allow_to_extrp = false;
-
-		return orig_process_interpolated_list();
-	}
-
 	bool __fastcall should_interpolate(valve::c_player* const ecx, const std::uintptr_t edx) {
 		if (ecx != valve::g_local_player
 			|| valve::g_client_state->m_last_cmd_out != hacks::g_exploits->recharge_cmd())
@@ -1182,25 +1794,6 @@ namespace supremacy::hooks
 			var_mapping.m_entries.at(i).m_needs_to_interpolate = false;
 
 		return false;
-	}
-
-	bool __fastcall interpolate_viewmodel(valve::c_entity* const ecx, const std::uintptr_t edx, float time) {
-		if (valve::g_client_state->m_last_cmd_out != hacks::g_exploits->recharge_cmd())
-			return orig_interpolate_viewmodel(ecx, edx, time);
-
-		auto owner = valve::g_entity_list->find_entity(ecx->view_model_owner());
-		if (owner->index() != valve::g_local_player->index())
-			return orig_interpolate_viewmodel(ecx, edx, time);
-
-		const auto backup_lerp_amount = valve::g_global_vars->m_interpolation_amount;
-
-		valve::g_global_vars->m_interpolation_amount = 0.f;
-
-		const auto ret = orig_interpolate_viewmodel(ecx, edx, time);
-
-		valve::g_global_vars->m_interpolation_amount = backup_lerp_amount;
-
-		return ret;
 	}
 
 	bool __fastcall write_user_cmd_delta_to_buffer(

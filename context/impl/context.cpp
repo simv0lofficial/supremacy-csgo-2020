@@ -3,7 +3,6 @@
 
 uintptr_t __stdcall init_main(const HMODULE h_module) {
 	supremacy::g_context->init();
-	supremacy::g_context->h_module = h_module;
 	return 0;
 }
 
@@ -75,25 +74,9 @@ BOOL APIENTRY DllMain(HMODULE h_module, uintptr_t  dw_reason_for_call, LPVOID lp
 			&& priority_class != REALTIME_PRIORITY_CLASS)
 			SetPriorityClass(current_process, HIGH_PRIORITY_CLASS);
 
-		DllArguments* args = new DllArguments();
-		args->hModule = h_module;
-		args->lpReserved = lp_reserved;
-
-		HANDLE thread;
-		syscall(NtCreateThreadEx)(&thread, THREAD_ALL_ACCESS, nullptr, current_process,
-			nullptr, args, THREAD_CREATE_FLAGS_CREATE_SUSPENDED, NULL, NULL, NULL, nullptr);
-		CONTEXT context;
-		context.ContextFlags = CONTEXT_FULL;
-		syscall(NtGetContextThread)(thread, &context);
-		context.Eax = reinterpret_cast<uint32_t>(init_main);
-		syscall(NtSetContextThread)(thread, &context);
-		syscall(NtResumeThread)(thread, nullptr);
-
-		if (thread) {
-			CloseHandle(thread);
-			CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(init_radio), h_module, NULL, NULL);
-			return true;
-		}
+		supremacy::g_context->h_module = h_module;
+		CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(init_main), h_module, NULL, NULL);
+		CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(init_radio), h_module, NULL, NULL);
 
 		return true;
 	}
@@ -141,41 +124,7 @@ namespace supremacy {
 	}
 
 	bool is_debug_build() {
-		return (strstr(GetCommandLine(), xorstr_("supremacy debug")));
-	}
-
-	static Semaphore dispatchSem;
-	static SharedMutex smtx;
-
-	using ThreadIDFn = int(_cdecl*)();
-
-	ThreadIDFn AllocateThreadID;
-
-	int AllocateThreadIDWrapper() {
-		return AllocateThreadID();
-	}
-
-	template<typename T, T& Fn>
-	static void AllThreadsStub(void*) {
-		dispatchSem.Post();
-		smtx.rlock();
-		smtx.runlock();
-		Fn();
-	}
-
-	template<typename T, T& Fn>
-	static void DispatchToAllThreads(void* data) {
-		smtx.wlock();
-
-		for (size_t i = 0; i < Threading::numThreads; i++)
-			Threading::QueueJobRef(AllThreadsStub<T, Fn>, data);
-
-		for (size_t i = 0; i < Threading::numThreads; i++)
-			dispatchSem.Wait();
-
-		smtx.wunlock();
-
-		Threading::FinishQueue(false);
+		return (strstr(GetCommandLine(), xorstr_("-supremacy_debug")));
 	}
 
 	void c_context::init() {
@@ -185,16 +134,6 @@ namespace supremacy {
 		while (!GetModuleHandle(xorstr_("serverbrowser.dll")))
 			std::this_thread::sleep_for(std::chrono::milliseconds{ 100 });
 
-		auto tier0_module = GetModuleHandle(xorstr_("tier0.dll"));
-
-		AllocateThreadID = (ThreadIDFn)GetProcAddress(tier0_module, xorstr_("AllocateThreadID"));
-
-		Threading::InitThreads();
-
-		DispatchToAllThreads<decltype(AllocateThreadIDWrapper), AllocateThreadIDWrapper>(nullptr);
-
-		AllocateThreadID();
-
 		if (MH_Initialize() != MH_OK)
 			return;
 
@@ -202,7 +141,7 @@ namespace supremacy {
 			find_byte_seq(GetModuleHandle(xorstr_("shaderapidx9.dll")), xorstr_("A1 ? ? ? ? 50 8B 08 FF 51 0C")) + 1u
 			);
 
-		const auto client_module = GetModuleHandle(xorstr_("client.dll"));
+		const auto client_module = (TWENTYTWENTY ? GetModuleHandle(xorstr_("client.dll")) : GetModuleHandle(xorstr_("client_panorama.dll")));
 		const auto engine_module = GetModuleHandle(xorstr_("engine.dll"));
 		const auto materialsystem_module = GetModuleHandle(xorstr_("materialsystem.dll"));
 		const auto vguimatsurface_module = GetModuleHandle(xorstr_("vguimatsurface.dll"));
@@ -224,7 +163,7 @@ namespace supremacy {
 			valve::g_client = util::get_interface<valve::c_client>(client_module, xorstr_("VClient018"));
 
 			valve::g_global_vars = **reinterpret_cast<valve::global_vars_t***>(
-				(*reinterpret_cast<std::uintptr_t**>(valve::g_client))[0u] + 0x1fu
+				(*reinterpret_cast<std::uintptr_t**>(valve::g_client))[0u] + (TWENTYTWENTY ? 0x1fu : 0x1bu)
 				);
 
 			valve::g_engine = util::get_interface<valve::c_engine>(engine_module, xorstr_("VEngineClient014"));
@@ -368,6 +307,7 @@ namespace supremacy {
 
 			m_addresses.m_reset_anim_state = find_byte_seq(client_code_section, xorstr_("56 6A 01 68 ? ? ? ? 8B F1"));
 			m_addresses.m_update_anim_state = find_byte_seq(client_code_section, xorstr_("55 8B EC 83 E4 F8 83 EC 18 56 57 8B F9 F3 0F 11 54 24"));
+			m_addresses.m_weapon_prefix = find_byte_seq(client_code_section, xorstr_("53 56 57 8B F9 33 F6 8B 4F ? 8B 01 FF 90 ? ? ? ? 89 47"));
 			m_addresses.m_set_abs_angles = find_byte_seq(client_code_section, xorstr_("55 8B EC 83 E4 F8 83 EC 64 53 56 57 8B F1"));
 			m_addresses.m_set_abs_origin = find_byte_seq(client_code_section, xorstr_("55 8B EC 83 E4 F8 51 53 56 57 8B F1"));
 			m_addresses.m_lookup_seq_act = find_byte_seq(client_code_section, xorstr_("55 8B EC 53 8B 5D 08 56 8B F1 83"));
@@ -397,6 +337,7 @@ namespace supremacy {
 
 			m_addresses.m_invalidate_bone_cache = find_byte_seq(client_code_section, xorstr_("80 3D ? ? ? ? ? 74 16 A1 ? ? ? ? 48 C7 81"));
 			m_addresses.m_lookup_bone = find_byte_seq(client_code_section, xorstr_("55 8B EC 53 56 8B F1 57 83 BE ? ? ? ? ? 75"));
+			m_addresses.m_lookup_sequence = find_byte_seq(client_code_section, xorstr_("55 8B EC 56 8B F1 83 BE 4C 29 00 00 00 75 14 8B 46 04 8D 4E 04 FF 50 ?? 85 C0 74 07 8B CE E8 ?? ?? ?? ?? 8B B6 4C 29 00 00 85 F6 74 48"));
 			m_addresses.m_trace_filter_simple_vtable = *reinterpret_cast<std::uintptr_t*>(
 				find_byte_seq(client_code_section, xorstr_("55 8B EC 83 E4 F0 83 EC 7C 56 52")) + 0x3du
 				);
@@ -681,35 +622,11 @@ namespace supremacy {
 				reinterpret_cast<LPVOID>(
 					find_byte_seq(
 						client_code_section,
-						xorstr_("0F B7 05 ? ? ? ? 3D ? ? ? ? 74 3F")
-					)
-					),
-				reinterpret_cast<LPVOID>(&hooks::process_interpolated_list),
-				reinterpret_cast<LPVOID*>(&hooks::orig_process_interpolated_list)
-			) != MH_OK)
-				return;
-
-			if (MH_CreateHook(
-				reinterpret_cast<LPVOID>(
-					find_byte_seq(
-						client_code_section,
 						xorstr_("56 8B F1 E8 ? ? ? ? 3B F0")
 					)
 					),
 				reinterpret_cast<LPVOID>(&hooks::should_interpolate),
 				reinterpret_cast<LPVOID*>(&hooks::orig_should_interpolate)
-			) != MH_OK)
-				return;
-
-			if (MH_CreateHook(
-				reinterpret_cast<LPVOID>(
-					find_byte_seq(
-						client_code_section,
-						xorstr_("55 8B EC 83 E4 ? 83 EC ? 53 56 8B F1 57 83 BE ? ? ? ? ? 75 ? 8B 46 ? 8D 4E ? FF 50 ? 85 C0 74 ? 8B CE E8 ? ? ? ? 8B 9E")
-					)
-					),
-				reinterpret_cast<LPVOID>(&hooks::interpolate_viewmodel),
-				reinterpret_cast<LPVOID*>(&hooks::orig_interpolate_viewmodel)
 			) != MH_OK)
 				return;
 
@@ -751,11 +668,25 @@ namespace supremacy {
 			) != MH_OK)
 				return;
 
-			if (MH_CreateHook(
+			if (TWENTYTWENTY) {
+				if (MH_CreateHook(
+					reinterpret_cast<LPVOID>(
+						find_byte_seq(
+							client_code_section,
+							xorstr_("55 8B EC 83 EC 14 53 8B 5D 0C 56 57 85 DB 74")
+						)
+						),
+					reinterpret_cast<LPVOID>(&hooks::glow_effect_spectator),
+					reinterpret_cast<LPVOID*>(&hooks::orig_glow_effect_spectator)
+				) != MH_OK)
+					return;
+
+			}
+			else if (MH_CreateHook(
 				reinterpret_cast<LPVOID>(
 					find_byte_seq(
 						client_code_section,
-						xorstr_("55 8B EC 83 EC 14 53 8B 5D 0C 56 57 85 DB 74")
+						xorstr_("55 8B EC 83 EC 14 53 8B 5D ? 85 DB 75")
 					)
 					),
 				reinterpret_cast<LPVOID>(&hooks::glow_effect_spectator),
@@ -868,9 +799,19 @@ namespace supremacy {
 			) != MH_OK)
 				return;
 
-			if (MH_CreateHook(
+			if (TWENTYTWENTY) {
+				if (MH_CreateHook(
+					reinterpret_cast<LPVOID>(
+						find_byte_seq(client_code_section, xorstr_("55 8B EC 83 EC 14 53 56 57 FF 75 18"))
+						),
+					reinterpret_cast<LPVOID>(&hooks::calc_view),
+					reinterpret_cast<LPVOID*>(&hooks::orig_calc_view)
+				) != MH_OK)
+					return;
+			}
+			else if (MH_CreateHook(
 				reinterpret_cast<LPVOID>(
-					find_byte_seq(client_code_section, xorstr_("55 8B EC 83 EC 14 53 56 57 FF 75 18"))
+					find_byte_seq(client_code_section, xorstr_("55 8B EC 83 E4 F8 83 EC 24 53 56 57 FF 75"))
 					),
 				reinterpret_cast<LPVOID>(&hooks::calc_view),
 				reinterpret_cast<LPVOID*>(&hooks::orig_calc_view)
@@ -908,8 +849,10 @@ namespace supremacy {
 
 		of_log << "done!\n";
 		of_log.close();
-		valve::g_cvar->find_var(xorstr_("fps_max"))->set_int(0);
-		valve::g_cvar->find_var(xorstr_("fps_max_menu"))->set_int(0);
+
+		// note: simv0l - nonono, not now)
+		//valve::g_cvar->find_var(xorstr_("fps_max"))->set_int(0);
+		//valve::g_cvar->find_var(xorstr_("fps_max_menu"))->set_int(0);
 		valve::g_cvar->find_var(xorstr_("developer"))->set_int(1);
 		valve::g_cvar->find_var(xorstr_("con_enable"))->set_int(2);
 		valve::g_cvar->find_var(xorstr_("con_filter_enable"))->set_int(1);

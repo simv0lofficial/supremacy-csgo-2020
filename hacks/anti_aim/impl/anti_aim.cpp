@@ -11,8 +11,6 @@ namespace supremacy::hacks {
 		float total_yaw{};
 		int valid_count{};
 
-		const auto view_angles = valve::g_engine->view_angles();
-
 		for (auto i = 1; i <= valve::g_global_vars->m_max_clients; ++i) {
 			const auto player = static_cast<valve::c_player*>(
 				valve::g_entity_list->find_entity(i)
@@ -46,7 +44,7 @@ namespace supremacy::hacks {
 				total_yaw += math::to_deg(std::atan2(y, x));
 			} break;
 			case 3: {
-				const auto fov = math::calc_fov(view_angles, g_context->shoot_pos(), player->world_space_center());
+				const auto fov = math::calc_fov(g_context->view_angles(), g_context->shoot_pos(), player->world_space_center());
 				if (fov >= best_value)
 					continue;
 
@@ -73,19 +71,23 @@ namespace supremacy::hacks {
 	}
 
 	bool c_anti_aim::auto_direction(float& yaw) {
-		if (!sdk::g_config_system->freestanding
-			|| !key_handler::check_key(sdk::g_config_system->freestanding_key, sdk::g_config_system->freestanding_key_style))
-			return false;
+		bool should_freestand = sdk::g_config_system->freestanding && key_handler::check_key(sdk::g_config_system->freestanding_key, sdk::g_config_system->freestanding_key_style);
 
-		valve::c_player* best_player{};
-		auto best_fov = std::numeric_limits< float >::max();
+		if (!sdk::g_config_system->automatic_side_selection && !should_freestand)
+			return false;		
 
-		const auto view_angles = valve::g_engine->view_angles();
+		constexpr float STEP{ 4.f };
+		constexpr float RANGE{ 32.f };
+		const auto& local_shoot_pos = g_context->shoot_pos();
+
+		struct auto_target_t { float fov; valve::c_player* player; };
+		auto_target_t target{ 180.f + 1.f, nullptr };
 
 		for (auto i = 1; i <= valve::g_global_vars->m_max_clients; ++i) {
 			const auto player = static_cast<valve::c_player*>(
 				valve::g_entity_list->find_entity(i)
 				);
+
 			if (!player
 				|| player->dormant()
 				|| !player->alive()
@@ -93,123 +95,52 @@ namespace supremacy::hacks {
 				|| player == valve::g_local_player)
 				continue;
 
-			const auto fov = math::calc_fov(view_angles, g_context->shoot_pos(), player->world_space_center());
-			if (fov >= best_fov)
-				continue;
+			const auto fov = math::calc_fov(g_context->view_angles(), g_context->shoot_pos(), player->world_space_center());
 
-			best_fov = fov;
-			best_player = player;
+			if (fov < target.fov) {
+				target.fov = fov;
+				target.player = player;
+			}
 		}
 
-		if (!best_player)
+		if (!target.player) {
+			if (should_freestand) {
+				yaw = m_auto_yaw = std::remainder(yaw - 180.f, 360.f);
+				return true;
+			}
+
 			return false;
-
-		struct angle_data_t {
-			__forceinline constexpr angle_data_t() = default;
-
-			__forceinline angle_data_t(const float yaw) : m_yaw{ yaw } {}
-
-			int		m_dmg{};
-			float	m_yaw{}, m_dist{};
-			bool	m_can_do_dmg{};
-		};
-
-		std::array< angle_data_t, 3u > angles{
-			{
-				{ std::remainder(yaw + 180.f, 360.f) },
-				{ std::remainder(yaw + 90.f, 360.f) },
-				{ std::remainder(yaw - 90.f, 360.f) }
-			}
-		};
-
-		constexpr auto k_range = 30.f;
-
-		auto enemy_shoot_pos = best_player->origin();
-
-		enemy_shoot_pos.z += 64.f;
-
-		bool valid{};
-
-		const auto& local_shoot_pos = g_context->shoot_pos();
-		for (auto& angle : angles) {
-			const auto rad_yaw = math::to_rad(angle.m_yaw);
-
-			const auto pen_data = g_auto_wall->fire_emulated(
-				best_player, valve::g_local_player, enemy_shoot_pos,
-				{
-					local_shoot_pos.x + std::cos(rad_yaw) * k_range,
-					local_shoot_pos.y + std::sin(rad_yaw) * k_range,
-					local_shoot_pos.z
-				}
-			);
-
-			if (pen_data.m_dmg < 1)
-				continue;
-
-			angle.m_dmg = pen_data.m_dmg;
-
-			angle.m_can_do_dmg = angle.m_dmg > 0;
-
-			if (!angle.m_can_do_dmg)
-				continue;
-
-			valid = true;
 		}
 
-		if (valid) {
-			float best_dmg{};
-			std::size_t best_index{};
+		std::vector< c_adaptive_angle > angles{ };
+		angles.emplace_back(yaw - 180.f);
+		angles.emplace_back(yaw + 90.f);
+		angles.emplace_back(yaw - 90.f);				
 
-			for (std::size_t i{}; i < angles.size(); ++i) {
-				const auto& angle = angles.at(i);
-				if (!angle.m_can_do_dmg
-					|| angle.m_dmg <= best_dmg)
-					continue;
+		bool valid{ false };
 
-				best_dmg = angle.m_dmg;
-				best_index = i;
-			}
+		auto start = target.player->origin() + target.player->view_offset();
+		for (auto it = angles.begin(); it != angles.end(); ++it) {
+			const auto rad_yaw = math::to_rad(it->m_yaw);
+			vec3_t end{ local_shoot_pos.x + std::cos(rad_yaw) * RANGE,
+				local_shoot_pos.y + std::sin(rad_yaw) * RANGE,
+				local_shoot_pos.z };
 
-			const auto& best_angle = angles.at(best_index);
+			vec3_t dir = end - start;
+			float len = dir.normalize();
 
-			if (sdk::g_config_system->freestanding == 1)
-				yaw = best_angle.m_yaw;
-			else {
-				yaw = std::remainder(yaw + 180.f, 360.f);
-
-				const auto diff = math::angle_diff(yaw, best_angle.m_yaw);
-
-				m_auto_dir_side = (sdk::g_config_system->freestanding == 2 ? diff >= 0.f : diff < 0.f) + 1;
-			}
-
-			return true;
-		}
-
-		valid = false;
-
-		constexpr auto k_step = 4.f;
-
-		for (auto& angle : angles) {
-			const auto rad_yaw = math::to_rad(angle.m_yaw);
-
-			const vec3_t dst{
-				local_shoot_pos.x + std::cos(rad_yaw) * k_range,
-				local_shoot_pos.y + std::sin(rad_yaw) * k_range,
-				local_shoot_pos.z
-			};
-
-			auto dir = dst - enemy_shoot_pos;
-
-			const auto len = dir.normalize();
 			if (len <= 0.f)
 				continue;
 
-			for (float i{}; i < len; i += k_step) {
-				const auto contents = valve::g_engine_trace->point_contents(local_shoot_pos + dir * i, valve::e_mask::shot_hull);
+			for (float i{ 0.f }; i < len; i += STEP) {
+				vec3_t point = start + (dir * i);
+
+				int contents = valve::g_engine_trace->point_contents(point, valve::e_mask::shot_hull);
+
 				if (!(contents & valve::e_mask::shot_hull))
 					continue;
 
-				auto mult = 1.f;
+				float mult = 1.f;
 
 				if (i > (len * 0.5f))
 					mult = 1.25f;
@@ -220,38 +151,51 @@ namespace supremacy::hacks {
 				if (i > (len * 0.9f))
 					mult = 2.f;
 
-				angle.m_dist += k_step * mult;
+				it->m_dist += (STEP * mult);
 
 				valid = true;
 			}
 		}
 
-		if (!valid)
-			return false;
-
-		if (std::abs(angles.at(0u).m_dist - angles.at(1u).m_dist) >= 10.f
-			|| std::abs(angles.at(0u).m_dist - angles.at(2u).m_dist) >= 10.f) {
-			std::sort(
-				angles.begin(), angles.end(),
-				[](const angle_data_t& a, const angle_data_t& b) {
-					return a.m_dist > b.m_dist;
-				}
-			);
-
-			const auto& best_angle = angles.front();
-			if (best_angle.m_dist > 400.f)
-				return false;
-
-			if (sdk::g_config_system->freestanding == 1)
-				yaw = best_angle.m_yaw;
-			else {
-				yaw = std::remainder(yaw + 180.f, 360.f);
-
-				const auto diff = math::angle_diff(yaw, best_angle.m_yaw);
-
-				m_auto_dir_side = (sdk::g_config_system->freestanding == 2 ? diff >= 0.f : diff < 0.f) + 1;
+		if (!valid) {
+			if (should_freestand) {
+				yaw = m_auto_yaw = std::remainder(yaw - 180.f, 360.f);
+				return true;
 			}
 
+			return false;
+		}
+
+		if (std::abs(angles.at(0u).m_dist - angles.at(1u).m_dist) >= 15.f
+			|| std::abs(angles.at(0u).m_dist - angles.at(2u).m_dist) >= 15.f) {
+			std::sort(angles.begin(), angles.end(),
+				[](const c_adaptive_angle& a, const c_adaptive_angle& b) {
+				return a.m_dist > b.m_dist;
+			});
+
+			c_adaptive_angle* best = &angles.front();
+			if (best->m_dist > 400.f)
+				return false;						
+
+			if (should_freestand)
+				m_auto_yaw = std::remainder(best->m_yaw, 360.f);
+
+			if (sdk::g_config_system->automatic_side_selection) {
+				const auto diff = math::angle_diff(yaw, best->m_yaw);
+				m_auto_dir_side = (sdk::g_config_system->automatic_side_selection == 1 ? diff >= 0.f : diff < 0.f);
+
+				if (std::abs(sdk::g_config_system->yaw) > 90.f)
+					m_auto_dir_side = !m_auto_dir_side;
+
+				if (should_freestand)
+					m_auto_dir_side = 0;
+
+				m_auto_dir_side += 1;
+			}
+		}
+
+		if (should_freestand) {
+			yaw = m_auto_yaw;
 			return true;
 		}
 
@@ -283,11 +227,15 @@ namespace supremacy::hacks {
 		}
 
 		if (sdk::g_config_system->body_yaw) {
-			if (m_auto_dir_side)
-				return m_auto_dir_side;
-
 			if (sdk::g_config_system->body_yaw == 2)
 				return 2 - (m_side_counter % 2);
+
+			if (sdk::g_config_system->automatic_side_selection
+				&& (m_manual_side == 1 || m_manual_side == 2))
+				m_auto_dir_side = (sdk::g_config_system->automatic_side_selection == 1 ? 1 : 2);
+
+			if (m_auto_dir_side)
+				return m_auto_dir_side;
 
 			return key_handler::check_key(sdk::g_config_system->body_yaw_key, sdk::g_config_system->body_yaw_key_style) ? 2 : 1;
 		}
@@ -399,12 +347,13 @@ namespace supremacy::hacks {
 	}
 
 	void c_anti_aim::select_yaw(float& yaw, const int side) {
-		m_auto_dir_side = 0;
-
 		if (!valve::g_client_state->m_choked_cmds)
 			m_choke_cycle_switch = !m_choke_cycle_switch;
 
-		yaw = valve::g_engine->view_angles().y;
+		yaw = g_context->view_angles().y;
+
+		m_auto_yaw = std::remainder(yaw - 180.f, 360.f);
+		m_auto_dir_side = 0;
 
 		if (m_manual_side == 1)
 			yaw += 90.f;

@@ -3,10 +3,6 @@
 
 namespace supremacy::hacks {
 	void c_shots::on_net_update() {
-		if (!valve::g_local_player
-			|| !valve::g_engine->in_game())
-			return m_elements.clear();
-
 		for (auto& shot : m_elements) {
 			if (shot.m_processed
 				|| !shot.m_process_tick
@@ -42,6 +38,8 @@ namespace supremacy::hacks {
 								valve::e_mask::shot_player, shot.m_target.m_entry->m_player, &trace
 							);
 
+							lag_backup.restore(shot.m_target.m_entry->m_player);
+
 							if (trace.m_hit_entity == shot.m_target.m_entry->m_player
 								&& trace.m_hitgroup == shot.m_server_info.m_hitgroup)
 								break;
@@ -72,6 +70,7 @@ namespace supremacy::hacks {
 					}
 				}
 				else {
+
 					shot.m_target.m_lag_record->restore(shot.m_target.m_entry->m_player, shot.m_target.m_lag_record->m_side);
 
 					valve::trace_t trace{};
@@ -81,7 +80,11 @@ namespace supremacy::hacks {
 						valve::e_mask::shot_player, shot.m_target.m_entry->m_player, &trace
 					);
 
-					if (trace.m_hit_entity != shot.m_target.m_entry->m_player) {
+					lag_backup.restore(shot.m_target.m_entry->m_player);
+
+					if (!trace.m_hit_entity
+						|| !trace.m_hit_entity->is_player()
+						|| trace.m_hit_entity != shot.m_target.m_entry->m_player) {
 						if (((shot.m_src - shot.m_target.m_point.m_pos).length() - 32.f) > (shot.m_src - shot.m_server_info.m_impact_pos).length()) {
 #ifdef ALPHA
 							util::g_notify->print_logo();
@@ -113,96 +116,112 @@ namespace supremacy::hacks {
 						}
 					}
 					else {
-#ifdef ALPHA
-						util::g_notify->print_logo();
-						util::g_notify->print_notify(true, true, 0xff998877u, xorstr_("missed shot due to "));
-						util::g_notify->print_notify(true, true, 0xff0045ffu, xorstr_("bad resolve\n"));
-#else
-#ifdef _DEBUG
-						util::g_notify->print_logo();
-						util::g_notify->print_notify(true, true, 0xff998877u, xorstr_("missed shot due to "));
-						util::g_notify->print_notify(true, true, 0xff0045ffu, xorstr_("bad resolve\n"));
-#else
-						if (g_context->debug_build) {
-							util::g_notify->print_logo();
-							util::g_notify->print_notify(true, true, 0xff998877u, xorstr_("missed shot due to "));
-							util::g_notify->print_notify(true, true, 0xff0045ffu, xorstr_("bad resolve\n"));
-						}
-#endif
-#endif
-						++shot.m_target.m_entry->m_misses;
-
-						if (shot.m_target.m_lag_record->m_trying_to_resolve
-							&& shot.m_target.m_point.m_intersections < 3
-							&& (shot.m_target.m_lag_record->m_flags & valve::e_ent_flags::on_ground)
-							&& !shot.m_target.m_lag_record->m_shot
-							&& !shot.m_target.m_lag_record->m_throw) {
-							if (shot.m_target.m_lag_record->m_side
-								&& shot.m_target.m_entry->m_prev_type == 1)
-								shot.m_target.m_entry->m_try_lby_resolver = false;
-
-							if (shot.m_target.m_lag_record->m_side
-								&& shot.m_target.m_entry->m_prev_type == 2)
-								shot.m_target.m_entry->m_try_trace_resolver = false;
-
-							if (shot.m_target.m_lag_record->m_side
-								&& shot.m_target.m_entry->m_prev_type == 3)
-								shot.m_target.m_entry->m_try_anim_resolver = false;
-
-							const auto wrong_anim_side = shot.m_target.m_lag_record->m_side;
-							auto new_anim_side = shot.m_target.m_lag_record->m_side;
-
-							switch (shot.m_target.m_lag_record->m_side) {
-							case 0:
-								new_anim_side = 1;
-								break;
-							case 1:
-								new_anim_side = 2;
-								break;
-							case 2:
-								if (shot.m_target.m_point.m_low_intersections == 3)
-									new_anim_side = 1;
-								else
-									new_anim_side = 3;
-								break;
-							case 3:
-								new_anim_side = 2;
-								break;
-							case 4:
-								new_anim_side = 1;
-								break;
-							}
-
-							shot.m_target.m_entry->m_prev_side = shot.m_target.m_lag_record->m_side = new_anim_side;
+						if (shot.m_target.m_entry->m_player->flags() & valve::e_ent_flags::fake_client) {
 #ifdef ALPHA
 							util::g_notify->print_logo();
-							util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("corrected side from %d to %d\n"), wrong_anim_side, new_anim_side);
+							util::g_notify->print_notify(true, true, 0xffc0c0c0u, xorstr_("missed shot due to "));
+							util::g_notify->print_notify(true, true, 0xff60a4f4u, xorstr_("unknown\n"));
 #else
 #ifdef _DEBUG
 							util::g_notify->print_logo();
-							util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("corrected side from %d to %d\n"), wrong_anim_side, new_anim_side);
+							util::g_notify->print_notify(true, true, 0xffc0c0c0u, xorstr_("missed shot due to "));
+							util::g_notify->print_notify(true, true, 0xff60a4f4u, xorstr_("unknown\n"));
 #else
 							if (g_context->debug_build) {
 								util::g_notify->print_logo();
+								util::g_notify->print_notify(true, true, 0xffc0c0c0u, xorstr_("missed shot due to "));
+								util::g_notify->print_notify(true, true, 0xff60a4f4u, xorstr_("unknown\n"));
+							}
+#endif
+#endif
+						}
+						else {
+#ifdef ALPHA
+							util::g_notify->print_logo();
+							util::g_notify->print_notify(true, true, 0xff998877u, xorstr_("missed shot due to "));
+							util::g_notify->print_notify(true, true, 0xff0045ffu, xorstr_("bad resolve\n"));
+#else
+#ifdef _DEBUG
+							util::g_notify->print_logo();
+							util::g_notify->print_notify(true, true, 0xff998877u, xorstr_("missed shot due to "));
+							util::g_notify->print_notify(true, true, 0xff0045ffu, xorstr_("bad resolve\n"));
+#else
+							if (g_context->debug_build) {
+								util::g_notify->print_logo();
+								util::g_notify->print_notify(true, true, 0xff998877u, xorstr_("missed shot due to "));
+								util::g_notify->print_notify(true, true, 0xff0045ffu, xorstr_("bad resolve\n"));
+							}
+#endif
+#endif
+							++shot.m_target.m_entry->m_misses;
+
+							if (shot.m_target.m_lag_record->m_trying_to_resolve
+								&& shot.m_target.m_point.m_intersections < 3
+								&& (shot.m_target.m_lag_record->m_flags & valve::e_ent_flags::on_ground)
+								&& !shot.m_target.m_lag_record->m_shot
+								&& !shot.m_target.m_lag_record->m_throw) {
+								if (shot.m_target.m_lag_record->m_side
+									&& shot.m_target.m_entry->m_prev_type == 1)
+									shot.m_target.m_entry->m_try_lby_resolver = false;
+
+								if (shot.m_target.m_lag_record->m_side
+									&& shot.m_target.m_entry->m_prev_type == 2)
+									shot.m_target.m_entry->m_try_trace_resolver = false;
+
+								if (shot.m_target.m_lag_record->m_side
+									&& shot.m_target.m_entry->m_prev_type == 3)
+									shot.m_target.m_entry->m_try_anim_resolver = false;
+
+								const auto wrong_anim_side = shot.m_target.m_lag_record->m_side;
+								auto new_anim_side = shot.m_target.m_lag_record->m_side;
+
+								switch (shot.m_target.m_lag_record->m_side) {
+								case 0:
+									new_anim_side = 1;
+									break;
+								case 1:
+									new_anim_side = 2;
+									break;
+								case 2:
+									new_anim_side = 1;
+									break;
+								case 3:
+									new_anim_side = 2;
+									break;
+								case 4:
+									new_anim_side = 1;
+									break;
+								}
+
+								shot.m_target.m_entry->m_prev_side = shot.m_target.m_lag_record->m_side = new_anim_side;
+#ifdef ALPHA
+								util::g_notify->print_logo();
 								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("corrected side from %d to %d\n"), wrong_anim_side, new_anim_side);
-							}
+#else
+#ifdef _DEBUG
+								util::g_notify->print_logo();
+								util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("corrected side from %d to %d\n"), wrong_anim_side, new_anim_side);
+#else
+								if (g_context->debug_build) {
+									util::g_notify->print_logo();
+									util::g_notify->print_notify(true, false, 0xff998877u, xorstr_("corrected side from %d to %d\n"), wrong_anim_side, new_anim_side);
+								}
 #endif
 #endif
-							for (auto& lag_record : shot.m_target.m_entry->m_lag_records) {
-								if (!lag_record->m_trying_to_resolve
-									|| lag_record->m_side != wrong_anim_side)
-									continue;
+								for (auto& lag_record : shot.m_target.m_entry->m_lag_records) {
+									if (!lag_record->m_trying_to_resolve
+										|| lag_record->m_side != wrong_anim_side)
+										continue;
 
-								lag_record->m_side = new_anim_side;
-								lag_record->m_priority = std::min(3, lag_record->m_priority);
+									lag_record->m_side = new_anim_side;
+									lag_record->m_priority = std::min(3, lag_record->m_priority);
+								}
+
+								shot.m_target.m_lag_record->m_priority = std::min(3, shot.m_target.m_lag_record->m_priority);
 							}
-
-							shot.m_target.m_lag_record->m_priority = std::min(3, shot.m_target.m_lag_record->m_priority);
 						}
 					}
 				}
-
-				lag_backup.restore(shot.m_target.m_entry->m_player);
 			}
 
 			shot.m_processed = true;
@@ -235,8 +254,6 @@ namespace supremacy::hacks {
 					util::g_notify->print_notify(true, true, 0xff60a4f4u, xorstr_("ping "));
 					util::g_notify->print_notify(true, true, 0xffc0c0c0u, xorstr_("(local death)\n"));
 				}
-
-				return true;
 #else
 #ifdef _DEBUG
 				if (valve::g_local_player->alive()) {
@@ -267,10 +284,9 @@ namespace supremacy::hacks {
 					util::g_notify->print_notify(true, true, 0xff60a4f4u, xorstr_("ping "));
 					util::g_notify->print_notify(true, true, 0xffc0c0c0u, xorstr_("(local death)\n"));
 				}
-
+#endif
+#endif
 				return true;
-#endif
-#endif
 			}
 		),
 			m_elements.end()

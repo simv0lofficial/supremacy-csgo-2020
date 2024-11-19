@@ -1283,12 +1283,14 @@ namespace supremacy::valve {
 	class c_weapon;
 
 	struct anim_state_t {
-		__forceinline void reset( );
+		__forceinline void reset();
 
 		__forceinline void update(
 			const float pitch, const float yaw
 		);
 
+		__forceinline const char* weapon_prefix();
+	
 		char					pad0[ 4u ]{};
 		bool					m_first_update{};
 		char					pad1[ 3u ]{};

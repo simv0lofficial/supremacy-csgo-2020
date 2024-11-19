@@ -3,6 +3,8 @@
 namespace supremacy::hacks {
 	class c_anim_sync {
 	private:
+		float get_local_cycle_increment(valve::c_player* player) const;
+
 		void update(
 			const player_entry_t& entry, lag_record_t* const current,
 			lag_record_t* const previous, lag_record_t* const penultimate,
@@ -31,7 +33,6 @@ namespace supremacy::hacks {
 				float					m_spawn_time{}, m_abs_yaw{};
 
 				valve::anim_state_t		m_anim_state{};
-
 				valve::anim_layers_t	m_anim_layers{};
 				valve::pose_params_t	m_pose_params{};
 			}					m_fake{};

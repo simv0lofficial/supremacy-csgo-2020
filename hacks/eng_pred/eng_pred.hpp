@@ -83,6 +83,8 @@ namespace supremacy::hacks {
 
 		void restore();
 
+		void update_accuracy();
+
 		void update_shoot_pos() const;
 
 		__forceinline valve::e_frame_stage& last_frame_stage();

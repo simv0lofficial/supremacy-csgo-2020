@@ -74,17 +74,14 @@ namespace supremacy::hacks {
 			if (pen.m_dmg < min_dmg)
 				return;
 		}
-#ifndef ALPHA
-#ifndef _DEBUG
-		if (!g_context->debug_build
-			&& target.m_entry->m_player->flags() & valve::e_ent_flags::fake_client) {
+
+		if (target.m_entry->m_player->flags() & valve::e_ent_flags::fake_client) {
 			point.m_intersections = 3;
 			point.m_valid = true;
 
 			return;
 		}
-#endif
-#endif
+
 		const auto intersect = [](
 			const vec3_t& shoot_pos, const vec3_t& point,
 			const valve::studio_hitbox_t* const hitbox, const mat3x4_t& matrix
@@ -323,7 +320,8 @@ namespace supremacy::hacks {
 
 		if (index) {
 			if (index == 3) {
-				if (!sdk::g_config_system->static_scale && scale > 0.9f)
+				if (scale > 0.9f
+					&& !sdk::g_config_system->static_scale)
 					scale = 0.9f;
 			}
 			else {
@@ -331,7 +329,8 @@ namespace supremacy::hacks {
 					&& index != 6) {
 					if (index == 4
 						|| index == 5) {
-						if (!sdk::g_config_system->static_scale && scale > 0.9f)
+						if (scale > 0.9f
+							&& !sdk::g_config_system->static_scale)
 							scale = 0.9f;
 
 						point = { center.x, hitbox->m_max.y - hitbox->m_radius * scale, center.z };
@@ -344,7 +343,8 @@ namespace supremacy::hacks {
 					return;
 				}
 
-				if (!sdk::g_config_system->static_scale && scale > 0.9f)
+				if (scale > 0.9f
+					&& !sdk::g_config_system->static_scale)
 					scale = 0.9f;
 
 				if (index == 6) {
@@ -400,10 +400,8 @@ namespace supremacy::hacks {
 
 		const auto is_taser = g_context->weapon()->item_index() == valve::e_item_index::taser;
 
-		const auto target_standing = target.m_lag_record->m_velocity.length() <= 5.f;
-
 		const auto force_safe_point = key_handler::check_key(sdk::g_config_system->safe_point_key, sdk::g_config_system->safe_point_key_style)
-			|| (sdk::g_config_system->safe_point_conditions[3] && target_standing)
+			|| (sdk::g_config_system->safe_point_conditions[3] && target.m_lag_record->m_velocity.length() <= 5.f && target.m_lag_record->m_flags & valve::e_ent_flags::on_ground)
 			|| (sdk::g_config_system->safe_point_conditions[5] && target.m_entry->m_misses >= sdk::g_config_system->max_misses_safe_point)
 			|| (sdk::g_config_system->safe_point_conditions[6] && target.m_lag_record->m_forward)
 			|| (sdk::g_config_system->safe_point_conditions[7] && target.m_lag_record->m_sideways);
@@ -941,6 +939,10 @@ namespace supremacy::hacks {
 		if (!g_context->cvars().m_cl_lagcompensation->get_bool())
 			return extrapolate(entry);
 
+		if (entry.m_lag_records.size() == 1u
+			|| !sdk::g_config_system->lag_compensation)
+			return select_latest_record(entry);
+
 		const auto& latest = entry.m_lag_records.back();
 		if (latest->m_broke_lc) {
 			int delay{};
@@ -964,10 +966,6 @@ namespace supremacy::hacks {
 			return extrapolate(entry);
 		}
 
-		if (entry.m_lag_records.size() == 1u
-			|| !sdk::g_config_system->lag_compensation)
-			return select_latest_record(entry);
-
 		int cfg_hitgroups{};
 
 		for (std::size_t i{}; i < 6u; ++i) {
@@ -987,20 +985,14 @@ namespace supremacy::hacks {
 
 		std::optional< aim_point_t > best_point{};
 		std::shared_ptr< lag_record_t > best_record{};
-		std::size_t valid_records_count{}, scanned_count{};
+		std::size_t scanned_count{};
 		lag_backup_t lag_backup{ entry.m_player };
 
 		for (auto i = entry.m_lag_records.rbegin(); i != entry.m_lag_records.rend(); i = std::next(i)) {
 			const auto& lag_record = *i;
 
-			if (!lag_record->valid()) {
-				if (lag_record->m_broke_lc)
-					break;
-
-				continue;
-			}
-
-			++valid_records_count;
+			if (!lag_record->valid())				
+				continue;		
 
 			if (!lag_record->m_dormant) {
 				aim_target_t target{};
@@ -1028,16 +1020,11 @@ namespace supremacy::hacks {
 					best_record = lag_record;
 					best_point = *target.m_best_point;
 
-					if (lag_record->m_broke_lc)
-						break;
-
 					continue;
 				}
 
 				if (!target.m_best_point->m_valid
 					|| !target.m_best_point->m_pen_data.m_dmg) {
-					if (lag_record->m_broke_lc)
-						break;
 
 					continue;
 				}
@@ -1048,9 +1035,6 @@ namespace supremacy::hacks {
 						best_point = *target.m_best_point;
 					}
 
-					if (lag_record->m_broke_lc)
-						break;
-
 					continue;
 				}
 
@@ -1059,9 +1043,6 @@ namespace supremacy::hacks {
 						best_record = lag_record;
 						best_point = *target.m_best_point;
 					}
-
-					if (lag_record->m_broke_lc)
-						break;
 
 					continue;
 				}
@@ -1072,9 +1053,6 @@ namespace supremacy::hacks {
 						best_point = *target.m_best_point;
 					}
 
-					if (lag_record->m_broke_lc)
-						break;
-
 					continue;
 				}
 
@@ -1082,9 +1060,6 @@ namespace supremacy::hacks {
 					&& target.m_best_point->m_intersections != best_point.value().m_intersections) {
 					best_record = lag_record;
 					best_point = *target.m_best_point;
-
-					if (lag_record->m_broke_lc)
-						break;
 
 					continue;
 				}
@@ -1100,9 +1075,6 @@ namespace supremacy::hacks {
 							best_point = *target.m_best_point;
 						}
 
-						if (lag_record->m_broke_lc)
-							break;
-
 						continue;
 					}
 				}
@@ -1113,9 +1085,6 @@ namespace supremacy::hacks {
 							best_point = *target.m_best_point;
 						}
 
-						if (lag_record->m_broke_lc)
-							break;
-
 						continue;
 					}
 				}
@@ -1125,9 +1094,6 @@ namespace supremacy::hacks {
 					best_point = *target.m_best_point;
 				}
 			}
-
-			if (lag_record->m_broke_lc)
-				break;
 		}
 
 		lag_backup.restore(entry.m_player);
@@ -1179,7 +1145,7 @@ namespace supremacy::hacks {
 			return target.m_best_body_point;
 
 		if (sdk::g_config_system->body_aim_conditions[4]) {
-			if (g_exploits->type() == 2) {
+			if (g_exploits->type() == 2 || g_exploits->type() == 3) {
 				if (g_exploits->next_shift_amount()
 					&& target.m_best_body_point->m_pen_data.m_dmg >= hp / 2)
 					return target.m_best_body_point;
@@ -1254,6 +1220,17 @@ namespace supremacy::hacks {
 
 		for (auto& target : m_targets)
 			scan_points(target, m_hitgroups, m_multi_points, true, false);
+
+		for (auto& target : m_targets) {
+			lag_backup_t lag_backup{ target.m_entry->m_player };
+
+			target.m_lag_record->restore(target.m_entry->m_player, target.m_lag_record->m_side);
+
+			for (auto& point : target.m_points)
+				g_aim_bot->scan_point(target, point, false);
+
+			lag_backup.restore(target.m_entry->m_player);
+		}
 
 		m_targets.erase(
 			std::remove_if(
@@ -1372,6 +1349,68 @@ namespace supremacy::hacks {
 		if (sdk::g_config_system->remove_recoil
 			&& g_context->cvars().m_weapon_accuracy_nospread->get_bool())
 			return 99;
+
+		/*vec3_t forward, right, up;
+		const auto angles = angle;
+		math::angle_vectors(angles, &forward, &right, &up);
+		forward.normalize();
+		right.normalize();
+		up.normalize();
+
+		auto endpoint = aim_point->m_pos;
+
+		const auto needed = static_cast<int>(256 * ((g_context->weapon()->item_index() == valve::e_item_index::taser ? 70 : sdk::g_config_system->minimum_hitchance) / 100.f));
+		const auto allowed_misses = 256 - needed;
+		auto hits = 0;
+		auto i = 0;
+
+		while (i < 256) {
+			g_context->addresses().m_random_seed((i & 255) + 1u);
+			const auto b = g_context->addresses().m_random_float(0.f, 2.f * math::k_pi2);
+			const auto c = g_context->addresses().m_random_float(0.f, 1.f);
+			const auto d = g_context->addresses().m_random_float(0.f, 2.f * math::k_pi2);
+
+			const auto spread_val = c * g_eng_pred->spread();
+			const auto inaccuracy_val = c * g_eng_pred->inaccuracy();
+
+			const vec3_t v_spread((cos(b) * spread_val) + (cos(d) * inaccuracy_val), (sin(b) * spread_val) + (sin(d) * inaccuracy_val), 0);
+			vec3_t dir;
+			dir = forward + (right * v_spread.x) + (up * v_spread.y);
+			dir.normalize();
+
+			qangle_t spread_view;
+			vec3_t end;
+			math::vector_angles(dir, spread_view);
+			spread_view.x = std::remainder(spread_view.x, 360.f);
+			spread_view.y = std::remainder(spread_view.y, 360.f);
+			spread_view.z = std::remainder(spread_view.z, 360.f);
+			math::angle_vectors(angles - (spread_view - angles), &end);
+			end.normalize();
+
+			vec3_t delta;
+			delta.x = endpoint.x - g_context->shoot_pos().x;
+			delta.y = endpoint.y - g_context->shoot_pos().y;
+			delta.z = endpoint.z - g_context->shoot_pos().z;
+
+			const auto trace_end = g_context->shoot_pos() + (end * delta.length());
+
+			valve::trace_t trace{};
+			valve::g_engine_trace->clip_ray_to_entity({ g_context->shoot_pos(), trace_end }, valve::e_mask::shot_player, target->m_entry->m_player, &trace);
+
+			if (trace.m_hit_entity == target->m_entry->m_player)
+				hits++;
+
+			const auto hitchance = (static_cast<int>(hits) / 256.f) * 100.f;
+			if (hitchance >= (g_context->weapon()->item_index() == valve::e_item_index::taser ? 70 : sdk::g_config_system->minimum_hitchance))
+				return hitchance;
+
+			if (i - hits > allowed_misses)
+				return hitchance;
+
+			i++;
+		}
+
+		return 0;*/
 	
 		const auto hp = target->m_entry->m_player->health();
 		const auto is_taser = g_context->weapon()->item_index() == valve::e_item_index::taser;
@@ -1464,10 +1503,6 @@ namespace supremacy::hacks {
 
 		g_context->flags() |= e_context_flags::has_target;
 
-		lag_backup_t lag_backup{ target->m_entry->m_player };
-
-		target->m_lag_record->restore(target->m_entry->m_player, target->m_lag_record->m_side);
-
 		if (sdk::g_config_system->quick_stop)
 			g_movement->stop_type() = ((g_context->flags() & e_context_flags::can_shoot) || sdk::g_config_system->between_shots) ? sdk::g_config_system->type + 1 : 0;
 
@@ -1494,6 +1529,10 @@ namespace supremacy::hacks {
 		}
 	
 		if (g_context->flags() & e_context_flags::can_shoot) {
+			lag_backup_t lag_backup{ target->m_entry->m_player };
+
+			target->m_lag_record->restore(target->m_entry->m_player, target->m_lag_record->m_side);
+
 			if (sdk::g_config_system->automatic_scope
 				&& (item_index == valve::e_item_index::g3sg1
 					|| item_index == valve::e_item_index::scar20
@@ -1532,16 +1571,16 @@ namespace supremacy::hacks {
 					m_last_target.m_entry = target->m_entry;
 					m_last_target.m_lag_record = target->m_lag_record;
 					m_last_target.m_hitbox = point->m_hitbox;
-					m_last_target.m_dmg = static_cast<int>(point->m_pen_data.m_dmg);
+					m_last_target.m_dmg = point->m_pen_data.m_dmg;
 					m_last_target.m_hit_chance = hit_chance;
 					m_last_target.m_point = *point;
 
 					g_context->flags() |= e_context_flags::aim_fire;
 				}
 			}
-		}
 
-		lag_backup.restore(target->m_entry->m_player);
+			lag_backup.restore(target->m_entry->m_player);
+		}
 
 		m_targets.clear();
 	}

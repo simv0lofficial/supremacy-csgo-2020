@@ -86,4 +86,8 @@ namespace supremacy {
 	__forceinline vec3_t& c_context::last_sent_origin( ) {
 		return m_last_sent_origin;
 	}
+
+	__forceinline vec3_t& c_context::view_angles() {
+		return m_view_angles;
+	}
 }

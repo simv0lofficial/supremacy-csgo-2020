@@ -119,38 +119,313 @@ namespace supremacy {
 			ui::SetNextWindowPos(posDouble(0));
 			ui::BeginChild("aimbot", child_size_d);
 			{
-				//ui::SingleSelect("weapon selection", &sdk::g_config_system->weapon_selection, { "pistols", "heavy pistols", "sub-machine guns", "rifles", "auto snipers", "scout", "awp", "shotguns", "machine guns", "taser" });
 				ui::Checkbox("enabled", &sdk::g_config_system->enabled);
 				ui::Keybind("##enabled_key", &sdk::g_config_system->enabled_key, &sdk::g_config_system->enabled_key_style);
-				ui::MultiSelect("target hitbox", &sdk::g_config_system->target_hitbox, { "head", "chest", "body", "arms", "legs", "feet" });
-				ui::MultiSelect("multi-point", &sdk::g_config_system->multi_point, { "head", "chest", "body", "arms", "legs", "feet" });
-				if (sdk::g_config_system->multi_point[0]
-					|| sdk::g_config_system->multi_point[1]
-					|| sdk::g_config_system->multi_point[2]
-					|| sdk::g_config_system->multi_point[3]
-					|| sdk::g_config_system->multi_point[4]
-					|| sdk::g_config_system->multi_point[5]
-					) {
-					ui::Checkbox("static scale", &sdk::g_config_system->static_scale);
-					if (sdk::g_config_system->static_scale) {
-						if (sdk::g_config_system->multi_point[0])
-							ui::SliderInt("head scale", &sdk::g_config_system->head_scale, 0, 100, "%d%%");
+				ui::SingleSelect("weapon selection", &sdk::g_config_system->weapon_selection, { "pistols", "heavy pistols", "sub-machine guns", "rifles", "auto snipers", "scout", "awp", "shotguns", "machine guns"/*, "taser"*/ });
+				if (sdk::g_config_system->weapon_selection == 0) {
+					ui::MultiSelect("target hitbox", &sdk::g_config_system->pistols_target_hitbox, { "head", "chest", "body", "arms", "legs", "feet" });
+					ui::MultiSelect("multi-point", &sdk::g_config_system->pistols_multi_point, { "head", "chest", "body", "arms", "legs", "feet" });
+					if (sdk::g_config_system->pistols_multi_point[0]
+						|| sdk::g_config_system->pistols_multi_point[1]
+						|| sdk::g_config_system->pistols_multi_point[2]
+						|| sdk::g_config_system->pistols_multi_point[3]
+						|| sdk::g_config_system->pistols_multi_point[4]
+						|| sdk::g_config_system->pistols_multi_point[5]
+						) {
+						ui::Checkbox("static scale", &sdk::g_config_system->pistols_static_scale);
+						if (sdk::g_config_system->pistols_static_scale) {
+							if (sdk::g_config_system->pistols_multi_point[0])
+								ui::SliderInt("head scale", &sdk::g_config_system->pistols_head_scale, 0, 100, "%d%%");
 
-						ui::SliderInt("body scale", &sdk::g_config_system->body_scale, 0, 100, "%d%%");
+							ui::SliderInt("body scale", &sdk::g_config_system->pistols_body_scale, 0, 100, "%d%%");
+						}
 					}
+					ui::Checkbox("automatic fire", &sdk::g_config_system->pistols_automatic_fire);
+					ui::Checkbox("silent aim", &sdk::g_config_system->pistols_silent_aim);
+					ui::SliderInt("minimum hitchance", &sdk::g_config_system->pistols_minimum_hitchance, 1, 99, "%d%%");
+					ui::SliderInt("minimum damage", &sdk::g_config_system->pistols_minimum_damage, 1, 100, "%dhp");
+					ui::Checkbox("automatic penetration", &sdk::g_config_system->pistols_automatic_penetration);
+					if (sdk::g_config_system->pistols_automatic_penetration)
+						ui::SliderInt("penetration minimum damage", &sdk::g_config_system->pistols_penetration_minimum_damage, 1, 100, "%dhp");
+					ui::Text("override minimum damage");
+					ui::Keybind("##override_minimum_damage_key", &sdk::g_config_system->override_minimum_damage_key, &sdk::g_config_system->override_minimum_damage_key_style);
+					ui::SliderInt("##pistols_override_minimum_damage", &sdk::g_config_system->pistols_override_minimum_damage, 1, 100, "%dhp");
+					ui::SliderInt("maximum fov", &sdk::g_config_system->pistols_maximum_fov, 1, 180, "%d°%");
 				}
-				ui::Checkbox("automatic fire", &sdk::g_config_system->automatic_fire);				
-				ui::Checkbox("silent aim", &sdk::g_config_system->silent_aim);
-				ui::SliderInt("minimum hitchance", &sdk::g_config_system->minimum_hitchance, 1, 99, "%d%%");
-				ui::SliderInt("minimum damage", &sdk::g_config_system->minimum_damage, 1, 100, "%dhp");
-				ui::Checkbox("automatic penetration", &sdk::g_config_system->automatic_penetration);
-				if (sdk::g_config_system->automatic_penetration)
-					ui::SliderInt("penetration minimum damage", &sdk::g_config_system->penetration_minimum_damage, 1, 100, "%dhp");
-				ui::Text("override minimum damage");
-				ui::Keybind("##override_minimum_damage_key", &sdk::g_config_system->override_minimum_damage_key, &sdk::g_config_system->override_minimum_damage_key_style);
-				ui::SliderInt("##override_minimum_damage", &sdk::g_config_system->override_minimum_damage, 1, 100, "%dhp");
-				ui::Checkbox("automatic scope", &sdk::g_config_system->automatic_scope);
-				ui::SliderInt("maximum fov", &sdk::g_config_system->maximum_fov, 1, 180, "%d°%");
+				else if (sdk::g_config_system->weapon_selection == 1) {
+					ui::MultiSelect("target hitbox", &sdk::g_config_system->heavy_pistols_target_hitbox, { "head", "chest", "body", "arms", "legs", "feet" });
+					ui::MultiSelect("multi-point", &sdk::g_config_system->heavy_pistols_multi_point, { "head", "chest", "body", "arms", "legs", "feet" });
+					if (sdk::g_config_system->heavy_pistols_multi_point[0]
+						|| sdk::g_config_system->heavy_pistols_multi_point[1]
+						|| sdk::g_config_system->heavy_pistols_multi_point[2]
+						|| sdk::g_config_system->heavy_pistols_multi_point[3]
+						|| sdk::g_config_system->heavy_pistols_multi_point[4]
+						|| sdk::g_config_system->heavy_pistols_multi_point[5]
+						) {
+						ui::Checkbox("static scale", &sdk::g_config_system->heavy_pistols_static_scale);
+						if (sdk::g_config_system->heavy_pistols_static_scale) {
+							if (sdk::g_config_system->heavy_pistols_multi_point[0])
+								ui::SliderInt("head scale", &sdk::g_config_system->heavy_pistols_head_scale, 0, 100, "%d%%");
+
+							ui::SliderInt("body scale", &sdk::g_config_system->heavy_pistols_body_scale, 0, 100, "%d%%");
+						}
+					}
+					ui::Checkbox("automatic fire", &sdk::g_config_system->heavy_pistols_automatic_fire);
+					ui::Checkbox("silent aim", &sdk::g_config_system->heavy_pistols_silent_aim);
+					ui::SliderInt("minimum hitchance", &sdk::g_config_system->heavy_pistols_minimum_hitchance, 1, 99, "%d%%");
+					ui::SliderInt("minimum damage", &sdk::g_config_system->heavy_pistols_minimum_damage, 1, 100, "%dhp");
+					ui::Checkbox("automatic penetration", &sdk::g_config_system->heavy_pistols_automatic_penetration);
+					if (sdk::g_config_system->heavy_pistols_automatic_penetration)
+						ui::SliderInt("penetration minimum damage", &sdk::g_config_system->heavy_pistols_penetration_minimum_damage, 1, 100, "%dhp");
+					ui::Text("override minimum damage");
+					ui::Keybind("##override_minimum_damage_key", &sdk::g_config_system->override_minimum_damage_key, &sdk::g_config_system->override_minimum_damage_key_style);
+					ui::SliderInt("##heavy_pistols_override_minimum_damage", &sdk::g_config_system->heavy_pistols_override_minimum_damage, 1, 100, "%dhp");
+					ui::SliderInt("maximum fov", &sdk::g_config_system->heavy_pistols_maximum_fov, 1, 180, "%d°%");
+				}
+				else if (sdk::g_config_system->weapon_selection == 2) {
+					ui::MultiSelect("target hitbox", &sdk::g_config_system->sub_machine_guns_target_hitbox, { "head", "chest", "body", "arms", "legs", "feet" });
+					ui::MultiSelect("multi-point", &sdk::g_config_system->sub_machine_guns_multi_point, { "head", "chest", "body", "arms", "legs", "feet" });
+					if (sdk::g_config_system->sub_machine_guns_multi_point[0]
+						|| sdk::g_config_system->sub_machine_guns_multi_point[1]
+						|| sdk::g_config_system->sub_machine_guns_multi_point[2]
+						|| sdk::g_config_system->sub_machine_guns_multi_point[3]
+						|| sdk::g_config_system->sub_machine_guns_multi_point[4]
+						|| sdk::g_config_system->sub_machine_guns_multi_point[5]
+						) {
+						ui::Checkbox("static scale", &sdk::g_config_system->sub_machine_guns_static_scale);
+						if (sdk::g_config_system->sub_machine_guns_static_scale) {
+							if (sdk::g_config_system->sub_machine_guns_multi_point[0])
+								ui::SliderInt("head scale", &sdk::g_config_system->sub_machine_guns_head_scale, 0, 100, "%d%%");
+
+							ui::SliderInt("body scale", &sdk::g_config_system->sub_machine_guns_body_scale, 0, 100, "%d%%");
+						}
+					}
+					ui::Checkbox("automatic fire", &sdk::g_config_system->sub_machine_guns_automatic_fire);
+					ui::Checkbox("silent aim", &sdk::g_config_system->sub_machine_guns_silent_aim);
+					ui::SliderInt("minimum hitchance", &sdk::g_config_system->sub_machine_guns_minimum_hitchance, 1, 99, "%d%%");
+					ui::SliderInt("minimum damage", &sdk::g_config_system->sub_machine_guns_minimum_damage, 1, 100, "%dhp");
+					ui::Checkbox("automatic penetration", &sdk::g_config_system->sub_machine_guns_automatic_penetration);
+					if (sdk::g_config_system->sub_machine_guns_automatic_penetration)
+						ui::SliderInt("penetration minimum damage", &sdk::g_config_system->sub_machine_guns_penetration_minimum_damage, 1, 100, "%dhp");
+					ui::Text("override minimum damage");
+					ui::Keybind("##override_minimum_damage_key", &sdk::g_config_system->override_minimum_damage_key, &sdk::g_config_system->override_minimum_damage_key_style);
+					ui::SliderInt("##sub_machine_guns_override_minimum_damage", &sdk::g_config_system->sub_machine_guns_override_minimum_damage, 1, 100, "%dhp");
+					ui::SliderInt("maximum fov", &sdk::g_config_system->sub_machine_guns_maximum_fov, 1, 180, "%d°%");
+				}
+				else if (sdk::g_config_system->weapon_selection == 3) {
+					ui::MultiSelect("target hitbox", &sdk::g_config_system->rifles_target_hitbox, { "head", "chest", "body", "arms", "legs", "feet" });
+					ui::MultiSelect("multi-point", &sdk::g_config_system->rifles_multi_point, { "head", "chest", "body", "arms", "legs", "feet" });
+					if (sdk::g_config_system->rifles_multi_point[0]
+						|| sdk::g_config_system->rifles_multi_point[1]
+						|| sdk::g_config_system->rifles_multi_point[2]
+						|| sdk::g_config_system->rifles_multi_point[3]
+						|| sdk::g_config_system->rifles_multi_point[4]
+						|| sdk::g_config_system->rifles_multi_point[5]
+						) {
+						ui::Checkbox("static scale", &sdk::g_config_system->rifles_static_scale);
+						if (sdk::g_config_system->rifles_static_scale) {
+							if (sdk::g_config_system->rifles_multi_point[0])
+								ui::SliderInt("head scale", &sdk::g_config_system->rifles_head_scale, 0, 100, "%d%%");
+
+							ui::SliderInt("body scale", &sdk::g_config_system->rifles_body_scale, 0, 100, "%d%%");
+						}
+					}
+					ui::Checkbox("automatic fire", &sdk::g_config_system->rifles_automatic_fire);
+					ui::Checkbox("silent aim", &sdk::g_config_system->rifles_silent_aim);
+					ui::SliderInt("minimum hitchance", &sdk::g_config_system->rifles_minimum_hitchance, 1, 99, "%d%%");
+					ui::SliderInt("minimum damage", &sdk::g_config_system->rifles_minimum_damage, 1, 100, "%dhp");
+					ui::Checkbox("automatic penetration", &sdk::g_config_system->rifles_automatic_penetration);
+					if (sdk::g_config_system->rifles_automatic_penetration)
+						ui::SliderInt("penetration minimum damage", &sdk::g_config_system->rifles_penetration_minimum_damage, 1, 100, "%dhp");
+					ui::Text("override minimum damage");
+					ui::Keybind("##override_minimum_damage_key", &sdk::g_config_system->override_minimum_damage_key, &sdk::g_config_system->override_minimum_damage_key_style);
+					ui::SliderInt("##rifles_override_minimum_damage", &sdk::g_config_system->rifles_override_minimum_damage, 1, 100, "%dhp");
+					ui::SliderInt("maximum fov", &sdk::g_config_system->rifles_maximum_fov, 1, 180, "%d°%");
+				}
+				else if (sdk::g_config_system->weapon_selection == 4) {
+					ui::MultiSelect("target hitbox", &sdk::g_config_system->auto_snipers_target_hitbox, { "head", "chest", "body", "arms", "legs", "feet" });
+					ui::MultiSelect("multi-point", &sdk::g_config_system->auto_snipers_multi_point, { "head", "chest", "body", "arms", "legs", "feet" });
+					if (sdk::g_config_system->auto_snipers_multi_point[0]
+						|| sdk::g_config_system->auto_snipers_multi_point[1]
+						|| sdk::g_config_system->auto_snipers_multi_point[2]
+						|| sdk::g_config_system->auto_snipers_multi_point[3]
+						|| sdk::g_config_system->auto_snipers_multi_point[4]
+						|| sdk::g_config_system->auto_snipers_multi_point[5]
+						) {
+						ui::Checkbox("static scale", &sdk::g_config_system->auto_snipers_static_scale);
+						if (sdk::g_config_system->auto_snipers_static_scale) {
+							if (sdk::g_config_system->auto_snipers_multi_point[0])
+								ui::SliderInt("head scale", &sdk::g_config_system->auto_snipers_head_scale, 0, 100, "%d%%");
+
+							ui::SliderInt("body scale", &sdk::g_config_system->auto_snipers_body_scale, 0, 100, "%d%%");
+						}
+					}
+					ui::Checkbox("automatic fire", &sdk::g_config_system->auto_snipers_automatic_fire);
+					ui::Checkbox("silent aim", &sdk::g_config_system->auto_snipers_silent_aim);
+					ui::SliderInt("minimum hitchance", &sdk::g_config_system->auto_snipers_minimum_hitchance, 1, 99, "%d%%");
+					ui::SliderInt("minimum damage", &sdk::g_config_system->auto_snipers_minimum_damage, 1, 100, "%dhp");
+					ui::Checkbox("automatic penetration", &sdk::g_config_system->auto_snipers_automatic_penetration);
+					if (sdk::g_config_system->auto_snipers_automatic_penetration)
+						ui::SliderInt("penetration minimum damage", &sdk::g_config_system->auto_snipers_penetration_minimum_damage, 1, 100, "%dhp");
+					ui::Text("override minimum damage");
+					ui::Keybind("##override_minimum_damage_key", &sdk::g_config_system->override_minimum_damage_key, &sdk::g_config_system->override_minimum_damage_key_style);
+					ui::SliderInt("##auto_snipers_override_minimum_damage", &sdk::g_config_system->auto_snipers_override_minimum_damage, 1, 100, "%dhp");
+					ui::Checkbox("automatic scope", &sdk::g_config_system->auto_snipers_automatic_scope);
+					ui::SliderInt("maximum fov", &sdk::g_config_system->auto_snipers_maximum_fov, 1, 180, "%d°%");
+				}
+				else if (sdk::g_config_system->weapon_selection == 5) {
+					ui::MultiSelect("target hitbox", &sdk::g_config_system->scout_target_hitbox, { "head", "chest", "body", "arms", "legs", "feet" });
+					ui::MultiSelect("multi-point", &sdk::g_config_system->scout_multi_point, { "head", "chest", "body", "arms", "legs", "feet" });
+					if (sdk::g_config_system->scout_multi_point[0]
+						|| sdk::g_config_system->scout_multi_point[1]
+						|| sdk::g_config_system->scout_multi_point[2]
+						|| sdk::g_config_system->scout_multi_point[3]
+						|| sdk::g_config_system->scout_multi_point[4]
+						|| sdk::g_config_system->scout_multi_point[5]
+						) {
+						ui::Checkbox("static scale", &sdk::g_config_system->scout_static_scale);
+						if (sdk::g_config_system->scout_static_scale) {
+							if (sdk::g_config_system->scout_multi_point[0])
+								ui::SliderInt("head scale", &sdk::g_config_system->scout_head_scale, 0, 100, "%d%%");
+
+							ui::SliderInt("body scale", &sdk::g_config_system->scout_body_scale, 0, 100, "%d%%");
+						}
+					}
+					ui::Checkbox("automatic fire", &sdk::g_config_system->scout_automatic_fire);
+					ui::Checkbox("silent aim", &sdk::g_config_system->scout_silent_aim);
+					ui::SliderInt("minimum hitchance", &sdk::g_config_system->scout_minimum_hitchance, 1, 99, "%d%%");
+					ui::SliderInt("minimum damage", &sdk::g_config_system->scout_minimum_damage, 1, 100, "%dhp");
+					ui::Checkbox("automatic penetration", &sdk::g_config_system->scout_automatic_penetration);
+					if (sdk::g_config_system->scout_automatic_penetration)
+						ui::SliderInt("penetration minimum damage", &sdk::g_config_system->scout_penetration_minimum_damage, 1, 100, "%dhp");
+					ui::Text("override minimum damage");
+					ui::Keybind("##override_minimum_damage_key", &sdk::g_config_system->override_minimum_damage_key, &sdk::g_config_system->override_minimum_damage_key_style);
+					ui::SliderInt("##scout_override_minimum_damage", &sdk::g_config_system->scout_override_minimum_damage, 1, 100, "%dhp");
+					ui::Checkbox("automatic scope", &sdk::g_config_system->scout_automatic_scope);
+					ui::SliderInt("maximum fov", &sdk::g_config_system->scout_maximum_fov, 1, 180, "%d°%");
+				}
+				else if (sdk::g_config_system->weapon_selection == 6) {
+					ui::MultiSelect("target hitbox", &sdk::g_config_system->awp_target_hitbox, { "head", "chest", "body", "arms", "legs", "feet" });
+					ui::MultiSelect("multi-point", &sdk::g_config_system->awp_multi_point, { "head", "chest", "body", "arms", "legs", "feet" });
+					if (sdk::g_config_system->awp_multi_point[0]
+						|| sdk::g_config_system->awp_multi_point[1]
+						|| sdk::g_config_system->awp_multi_point[2]
+						|| sdk::g_config_system->awp_multi_point[3]
+						|| sdk::g_config_system->awp_multi_point[4]
+						|| sdk::g_config_system->awp_multi_point[5]
+						) {
+						ui::Checkbox("static scale", &sdk::g_config_system->awp_static_scale);
+						if (sdk::g_config_system->awp_static_scale) {
+							if (sdk::g_config_system->awp_multi_point[0])
+								ui::SliderInt("head scale", &sdk::g_config_system->awp_head_scale, 0, 100, "%d%%");
+
+							ui::SliderInt("body scale", &sdk::g_config_system->awp_body_scale, 0, 100, "%d%%");
+						}
+					}
+					ui::Checkbox("automatic fire", &sdk::g_config_system->awp_automatic_fire);
+					ui::Checkbox("silent aim", &sdk::g_config_system->awp_silent_aim);
+					ui::SliderInt("minimum hitchance", &sdk::g_config_system->awp_minimum_hitchance, 1, 99, "%d%%");
+					ui::SliderInt("minimum damage", &sdk::g_config_system->awp_minimum_damage, 1, 100, "%dhp");
+					ui::Checkbox("automatic penetration", &sdk::g_config_system->awp_automatic_penetration);
+					if (sdk::g_config_system->awp_automatic_penetration)
+						ui::SliderInt("penetration minimum damage", &sdk::g_config_system->awp_penetration_minimum_damage, 1, 100, "%dhp");
+					ui::Text("override minimum damage");
+					ui::Keybind("##override_minimum_damage_key", &sdk::g_config_system->override_minimum_damage_key, &sdk::g_config_system->override_minimum_damage_key_style);
+					ui::SliderInt("##awp_override_minimum_damage", &sdk::g_config_system->awp_override_minimum_damage, 1, 100, "%dhp");
+					ui::Checkbox("automatic scope", &sdk::g_config_system->awp_automatic_scope);
+					ui::SliderInt("maximum fov", &sdk::g_config_system->awp_maximum_fov, 1, 180, "%d°%");
+				}
+				else if (sdk::g_config_system->weapon_selection == 7) {
+					ui::MultiSelect("target hitbox", &sdk::g_config_system->shotguns_target_hitbox, { "head", "chest", "body", "arms", "legs", "feet" });
+					ui::MultiSelect("multi-point", &sdk::g_config_system->shotguns_multi_point, { "head", "chest", "body", "arms", "legs", "feet" });
+					if (sdk::g_config_system->shotguns_multi_point[0]
+						|| sdk::g_config_system->shotguns_multi_point[1]
+						|| sdk::g_config_system->shotguns_multi_point[2]
+						|| sdk::g_config_system->shotguns_multi_point[3]
+						|| sdk::g_config_system->shotguns_multi_point[4]
+						|| sdk::g_config_system->shotguns_multi_point[5]
+						) {
+						ui::Checkbox("static scale", &sdk::g_config_system->shotguns_static_scale);
+						if (sdk::g_config_system->shotguns_static_scale) {
+							if (sdk::g_config_system->shotguns_multi_point[0])
+								ui::SliderInt("head scale", &sdk::g_config_system->shotguns_head_scale, 0, 100, "%d%%");
+
+							ui::SliderInt("body scale", &sdk::g_config_system->shotguns_body_scale, 0, 100, "%d%%");
+						}
+					}
+					ui::Checkbox("automatic fire", &sdk::g_config_system->shotguns_automatic_fire);
+					ui::Checkbox("silent aim", &sdk::g_config_system->shotguns_silent_aim);
+					ui::SliderInt("minimum hitchance", &sdk::g_config_system->shotguns_minimum_hitchance, 1, 99, "%d%%");
+					ui::SliderInt("minimum damage", &sdk::g_config_system->shotguns_minimum_damage, 1, 100, "%dhp");
+					ui::Checkbox("automatic penetration", &sdk::g_config_system->shotguns_automatic_penetration);
+					if (sdk::g_config_system->shotguns_automatic_penetration)
+						ui::SliderInt("penetration minimum damage", &sdk::g_config_system->shotguns_penetration_minimum_damage, 1, 100, "%dhp");
+					ui::Text("override minimum damage");
+					ui::Keybind("##override_minimum_damage_key", &sdk::g_config_system->override_minimum_damage_key, &sdk::g_config_system->override_minimum_damage_key_style);
+					ui::SliderInt("##shotguns_override_minimum_damage", &sdk::g_config_system->shotguns_override_minimum_damage, 1, 100, "%dhp");
+					ui::SliderInt("maximum fov", &sdk::g_config_system->shotguns_maximum_fov, 1, 180, "%d°%");
+				}
+				else if (sdk::g_config_system->weapon_selection == 8) {
+					ui::MultiSelect("target hitbox", &sdk::g_config_system->machine_guns_target_hitbox, { "head", "chest", "body", "arms", "legs", "feet" });
+					ui::MultiSelect("multi-point", &sdk::g_config_system->machine_guns_multi_point, { "head", "chest", "body", "arms", "legs", "feet" });
+					if (sdk::g_config_system->machine_guns_multi_point[0]
+						|| sdk::g_config_system->machine_guns_multi_point[1]
+						|| sdk::g_config_system->machine_guns_multi_point[2]
+						|| sdk::g_config_system->machine_guns_multi_point[3]
+						|| sdk::g_config_system->machine_guns_multi_point[4]
+						|| sdk::g_config_system->machine_guns_multi_point[5]
+						) {
+						ui::Checkbox("static scale", &sdk::g_config_system->machine_guns_static_scale);
+						if (sdk::g_config_system->machine_guns_static_scale) {
+							if (sdk::g_config_system->machine_guns_multi_point[0])
+								ui::SliderInt("head scale", &sdk::g_config_system->machine_guns_head_scale, 0, 100, "%d%%");
+
+							ui::SliderInt("body scale", &sdk::g_config_system->machine_guns_body_scale, 0, 100, "%d%%");
+						}
+					}
+					ui::Checkbox("automatic fire", &sdk::g_config_system->machine_guns_automatic_fire);
+					ui::Checkbox("silent aim", &sdk::g_config_system->machine_guns_silent_aim);
+					ui::SliderInt("minimum hitchance", &sdk::g_config_system->machine_guns_minimum_hitchance, 1, 99, "%d%%");
+					ui::SliderInt("minimum damage", &sdk::g_config_system->machine_guns_minimum_damage, 1, 100, "%dhp");
+					ui::Checkbox("automatic penetration", &sdk::g_config_system->machine_guns_automatic_penetration);
+					if (sdk::g_config_system->machine_guns_automatic_penetration)
+						ui::SliderInt("penetration minimum damage", &sdk::g_config_system->machine_guns_penetration_minimum_damage, 1, 100, "%dhp");
+					ui::Text("override minimum damage");
+					ui::Keybind("##override_minimum_damage_key", &sdk::g_config_system->override_minimum_damage_key, &sdk::g_config_system->override_minimum_damage_key_style);
+					ui::SliderInt("##machine_guns_override_minimum_damage", &sdk::g_config_system->machine_guns_override_minimum_damage, 1, 100, "%dhp");
+					ui::SliderInt("maximum fov", &sdk::g_config_system->machine_guns_maximum_fov, 1, 180, "%d°%");
+				}
+				else if (sdk::g_config_system->weapon_selection == 9) {
+					ui::MultiSelect("target hitbox", &sdk::g_config_system->taser_target_hitbox, { "head", "chest", "body", "arms", "legs", "feet" });
+					ui::MultiSelect("multi-point", &sdk::g_config_system->taser_multi_point, { "head", "chest", "body", "arms", "legs", "feet" });
+					if (sdk::g_config_system->taser_multi_point[0]
+						|| sdk::g_config_system->taser_multi_point[1]
+						|| sdk::g_config_system->taser_multi_point[2]
+						|| sdk::g_config_system->taser_multi_point[3]
+						|| sdk::g_config_system->taser_multi_point[4]
+						|| sdk::g_config_system->taser_multi_point[5]
+						) {
+						ui::Checkbox("static scale", &sdk::g_config_system->taser_static_scale);
+						if (sdk::g_config_system->taser_static_scale) {
+							if (sdk::g_config_system->taser_multi_point[0])
+								ui::SliderInt("head scale", &sdk::g_config_system->taser_head_scale, 0, 100, "%d%%");
+
+							ui::SliderInt("body scale", &sdk::g_config_system->taser_body_scale, 0, 100, "%d%%");
+						}
+					}
+					ui::Checkbox("automatic fire", &sdk::g_config_system->taser_automatic_fire);
+					ui::Checkbox("silent aim", &sdk::g_config_system->taser_silent_aim);
+					ui::SliderInt("minimum hitchance", &sdk::g_config_system->taser_minimum_hitchance, 1, 99, "%d%%");
+					ui::SliderInt("minimum damage", &sdk::g_config_system->taser_minimum_damage, 1, 100, "%dhp");
+					ui::Checkbox("automatic penetration", &sdk::g_config_system->taser_automatic_penetration);
+					if (sdk::g_config_system->taser_automatic_penetration)
+						ui::SliderInt("penetration minimum damage", &sdk::g_config_system->taser_penetration_minimum_damage, 1, 100, "%dhp");
+					ui::Text("override minimum damage");
+					ui::Keybind("##override_minimum_damage_key", &sdk::g_config_system->override_minimum_damage_key, &sdk::g_config_system->override_minimum_damage_key_style);
+					ui::SliderInt("##taser_override_minimum_damage", &sdk::g_config_system->taser_override_minimum_damage, 1, 100, "%dhp");
+					ui::SliderInt("maximum fov", &sdk::g_config_system->taser_maximum_fov, 1, 180, "%d°%");
+				}
+
 				ui::Checkbox("log misses due to spread", &sdk::g_config_system->log_misses_due_to_spread);
 			}
 			ui::EndChild();
@@ -158,48 +433,456 @@ namespace supremacy {
 			ui::SetNextWindowPos(posDouble(1));
 			ui::BeginChild("other", child_size_d);
 			{
-				ui::Checkbox("remove recoil", &sdk::g_config_system->remove_recoil);
-				ui::SliderInt("accuracy boost", &sdk::g_config_system->accuracy_boost, 0, 100, "%d%%");
-				ui::Checkbox("quick stop", &sdk::g_config_system->quick_stop);
-				if (sdk::g_config_system->quick_stop) {
-					ui::SingleSelect("##type", &sdk::g_config_system->type, { "full", "auto" });
-					ui::Checkbox("between shots", &sdk::g_config_system->between_shots);
-				}
-
-				if (ui::Button(g_context->cvars().m_cl_lagcompensation->get_bool() ? "disable client lag compensation" : "enable client lag compensation")) {
-					if (valve::g_engine->in_game()
-						&& valve::g_local_player) {
-						g_context->switch_lagcompensation_state() = true;
+				if (sdk::g_config_system->weapon_selection == 0) {
+					ui::Checkbox("remove recoil", &sdk::g_config_system->pistols_remove_recoil);
+					ui::SliderInt("accuracy boost", &sdk::g_config_system->pistols_accuracy_boost, 0, 100, "%d%%");
+					ui::Checkbox("quick stop", &sdk::g_config_system->pistols_quick_stop);
+					if (sdk::g_config_system->pistols_quick_stop) {
+						ui::SingleSelect("##type", &sdk::g_config_system->pistols_type, { "full", "auto" });
+						ui::Checkbox("between shots", &sdk::g_config_system->pistols_between_shots);
 					}
-					else
-						g_context->cvars().m_cl_lagcompensation->set_int(!g_context->cvars().m_cl_lagcompensation->get_bool());
-				}
 
-				if (g_context->cvars().m_cl_lagcompensation->get_bool())
-					ui::SingleSelect("lag compensation", &sdk::g_config_system->lag_compensation, { "off", "normal", "high" });
-				ui::Checkbox("anti-aim correction", &sdk::g_config_system->anti_aim_correction);
-				ui::MultiSelect("body aim conditions", &sdk::g_config_system->body_aim_conditions, { "prefer", "unsafe", "lethal", "lethal x2", "double shot", "overlapping desync", "max misses", "forward", "sideways" });
-				ui::Keybind("##body_aim_key", &sdk::g_config_system->body_aim_key, &sdk::g_config_system->body_aim_key_style);
-				if (sdk::g_config_system->body_aim_conditions[6])
-					ui::SliderInt("##max_misses_body_aim", &sdk::g_config_system->max_misses_body_aim, 1, 5, "%d miss");
-				ui::MultiSelect("safe point conditions", &sdk::g_config_system->safe_point_conditions, { "prefer", "lethal", "lethal x2", "standing", "targeting limbs", "max misses", "forward", "sideways" });
-				ui::Keybind("##safe_point_key", &sdk::g_config_system->safe_point_key, &sdk::g_config_system->safe_point_key_style);
-				if (sdk::g_config_system->safe_point_key
-					|| sdk::g_config_system->safe_point_conditions[0]
-					|| sdk::g_config_system->safe_point_conditions[1]
-					|| sdk::g_config_system->safe_point_conditions[2]
-					|| sdk::g_config_system->safe_point_conditions[3]
-					|| sdk::g_config_system->safe_point_conditions[4]
-					|| sdk::g_config_system->safe_point_conditions[5]
-					|| sdk::g_config_system->safe_point_conditions[6]
-					|| sdk::g_config_system->safe_point_conditions[7]
-					) {
-					ui::SingleSelect("type", &sdk::g_config_system->safe_point_type, { "normal", "strict" });
-					if (sdk::g_config_system->safe_point_conditions[5])
-						ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->max_misses_safe_point, 1, 5, "%d miss");
+					if (ui::Button(g_context->cvars().m_cl_lagcompensation->get_bool() ? "disable client lag compensation" : "enable client lag compensation")) {
+						if (valve::g_engine->in_game()
+							&& valve::g_local_player) {
+							g_context->switch_lagcompensation_state() = true;
+						}
+						else
+							g_context->cvars().m_cl_lagcompensation->set_int(!g_context->cvars().m_cl_lagcompensation->get_bool());
+					}
+
+					if (g_context->cvars().m_cl_lagcompensation->get_bool())
+						ui::SingleSelect("lag compensation", &sdk::g_config_system->pistols_lag_compensation, { "off", "normal", "high" });
+					ui::Checkbox("anti-aim correction", &sdk::g_config_system->anti_aim_correction);
+					ui::MultiSelect("body aim conditions", &sdk::g_config_system->pistols_body_aim_conditions, { "prefer", "unsafe", "lethal", "lethal x2", "double shot", "overlapping desync", "max misses", "forward", "sideways" });
+					ui::Keybind("##body_aim_key", &sdk::g_config_system->body_aim_key, &sdk::g_config_system->body_aim_key_style);
+					if (sdk::g_config_system->pistols_body_aim_conditions[6])
+						ui::SliderInt("##max_misses_body_aim", &sdk::g_config_system->pistols_max_misses_body_aim, 1, 5, "%d miss");
+					ui::MultiSelect("safe point conditions", &sdk::g_config_system->pistols_safe_point_conditions, { "prefer", "lethal", "lethal x2", "standing", "targeting limbs", "max misses", "forward", "sideways" });
+					ui::Keybind("##safe_point_key", &sdk::g_config_system->safe_point_key, &sdk::g_config_system->safe_point_key_style);
+					if (sdk::g_config_system->safe_point_key
+						|| sdk::g_config_system->pistols_safe_point_conditions[0]
+						|| sdk::g_config_system->pistols_safe_point_conditions[1]
+						|| sdk::g_config_system->pistols_safe_point_conditions[2]
+						|| sdk::g_config_system->pistols_safe_point_conditions[3]
+						|| sdk::g_config_system->pistols_safe_point_conditions[4]
+						|| sdk::g_config_system->pistols_safe_point_conditions[5]
+						|| sdk::g_config_system->pistols_safe_point_conditions[6]
+						|| sdk::g_config_system->pistols_safe_point_conditions[7]
+						) {
+						ui::SingleSelect("type", &sdk::g_config_system->pistols_safe_point_type, { "normal", "strict" });
+						if (sdk::g_config_system->pistols_safe_point_conditions[5])
+							ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->pistols_max_misses_safe_point, 1, 5, "%d miss");
+					}
+					ui::Checkbox("double tap", &sdk::g_config_system->pistols_double_tap);
+					ui::Keybind("##double_tap_key", &sdk::g_config_system->double_tap_key, &sdk::g_config_system->double_tap_key_style);
+					ui::SliderInt("max shift amount", &sdk::g_config_system->pistols_max_shift_amount, 6, 15, "%d ticks");
 				}
-				ui::Checkbox("double tap", &sdk::g_config_system->double_tap);
-				ui::Keybind("##double_tap_key", &sdk::g_config_system->double_tap_key, &sdk::g_config_system->double_tap_key_style);
+				else if (sdk::g_config_system->weapon_selection == 1) {
+					ui::Checkbox("remove recoil", &sdk::g_config_system->heavy_pistols_remove_recoil);
+					ui::SliderInt("accuracy boost", &sdk::g_config_system->heavy_pistols_accuracy_boost, 0, 100, "%d%%");
+					ui::Checkbox("quick stop", &sdk::g_config_system->heavy_pistols_quick_stop);
+					if (sdk::g_config_system->heavy_pistols_quick_stop) {
+						ui::SingleSelect("##type", &sdk::g_config_system->heavy_pistols_type, { "full", "auto" });
+						ui::Checkbox("between shots", &sdk::g_config_system->heavy_pistols_between_shots);
+					}
+
+					if (ui::Button(g_context->cvars().m_cl_lagcompensation->get_bool() ? "disable client lag compensation" : "enable client lag compensation")) {
+						if (valve::g_engine->in_game()
+							&& valve::g_local_player) {
+							g_context->switch_lagcompensation_state() = true;
+						}
+						else
+							g_context->cvars().m_cl_lagcompensation->set_int(!g_context->cvars().m_cl_lagcompensation->get_bool());
+					}
+
+					if (g_context->cvars().m_cl_lagcompensation->get_bool())
+						ui::SingleSelect("lag compensation", &sdk::g_config_system->heavy_pistols_lag_compensation, { "off", "normal", "high" });
+					ui::Checkbox("anti-aim correction", &sdk::g_config_system->anti_aim_correction);
+					ui::MultiSelect("body aim conditions", &sdk::g_config_system->heavy_pistols_body_aim_conditions, { "prefer", "unsafe", "lethal", "lethal x2", "double shot", "overlapping desync", "max misses", "forward", "sideways" });
+					ui::Keybind("##body_aim_key", &sdk::g_config_system->body_aim_key, &sdk::g_config_system->body_aim_key_style);
+					if (sdk::g_config_system->heavy_pistols_body_aim_conditions[6])
+						ui::SliderInt("##max_misses_body_aim", &sdk::g_config_system->heavy_pistols_max_misses_body_aim, 1, 5, "%d miss");
+					ui::MultiSelect("safe point conditions", &sdk::g_config_system->heavy_pistols_safe_point_conditions, { "prefer", "lethal", "lethal x2", "standing", "targeting limbs", "max misses", "forward", "sideways" });
+					ui::Keybind("##safe_point_key", &sdk::g_config_system->safe_point_key, &sdk::g_config_system->safe_point_key_style);
+					if (sdk::g_config_system->safe_point_key
+						|| sdk::g_config_system->heavy_pistols_safe_point_conditions[0]
+						|| sdk::g_config_system->heavy_pistols_safe_point_conditions[1]
+						|| sdk::g_config_system->heavy_pistols_safe_point_conditions[2]
+						|| sdk::g_config_system->heavy_pistols_safe_point_conditions[3]
+						|| sdk::g_config_system->heavy_pistols_safe_point_conditions[4]
+						|| sdk::g_config_system->heavy_pistols_safe_point_conditions[5]
+						|| sdk::g_config_system->heavy_pistols_safe_point_conditions[6]
+						|| sdk::g_config_system->heavy_pistols_safe_point_conditions[7]
+						) {
+						ui::SingleSelect("type", &sdk::g_config_system->heavy_pistols_safe_point_type, { "normal", "strict" });
+						if (sdk::g_config_system->heavy_pistols_safe_point_conditions[5])
+							ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->heavy_pistols_max_misses_safe_point, 1, 5, "%d miss");
+					}
+					ui::Checkbox("double tap", &sdk::g_config_system->heavy_pistols_double_tap);
+					ui::Keybind("##double_tap_key", &sdk::g_config_system->double_tap_key, &sdk::g_config_system->double_tap_key_style);
+					ui::SliderInt("max shift amount", &sdk::g_config_system->heavy_pistols_max_shift_amount, 6, 15, "%d ticks");
+				}
+				else if (sdk::g_config_system->weapon_selection == 2) {
+					ui::Checkbox("remove recoil", &sdk::g_config_system->sub_machine_guns_remove_recoil);
+					ui::SliderInt("accuracy boost", &sdk::g_config_system->sub_machine_guns_accuracy_boost, 0, 100, "%d%%");
+					ui::Checkbox("quick stop", &sdk::g_config_system->sub_machine_guns_quick_stop);
+					if (sdk::g_config_system->sub_machine_guns_quick_stop) {
+						ui::SingleSelect("##type", &sdk::g_config_system->sub_machine_guns_type, { "full", "auto" });
+						ui::Checkbox("between shots", &sdk::g_config_system->sub_machine_guns_between_shots);
+					}
+
+					if (ui::Button(g_context->cvars().m_cl_lagcompensation->get_bool() ? "disable client lag compensation" : "enable client lag compensation")) {
+						if (valve::g_engine->in_game()
+							&& valve::g_local_player) {
+							g_context->switch_lagcompensation_state() = true;
+						}
+						else
+							g_context->cvars().m_cl_lagcompensation->set_int(!g_context->cvars().m_cl_lagcompensation->get_bool());
+					}
+
+					if (g_context->cvars().m_cl_lagcompensation->get_bool())
+						ui::SingleSelect("lag compensation", &sdk::g_config_system->sub_machine_guns_lag_compensation, { "off", "normal", "high" });
+					ui::Checkbox("anti-aim correction", &sdk::g_config_system->anti_aim_correction);
+					ui::MultiSelect("body aim conditions", &sdk::g_config_system->sub_machine_guns_body_aim_conditions, { "prefer", "unsafe", "lethal", "lethal x2", "double shot", "overlapping desync", "max misses", "forward", "sideways" });
+					ui::Keybind("##body_aim_key", &sdk::g_config_system->body_aim_key, &sdk::g_config_system->body_aim_key_style);
+					if (sdk::g_config_system->sub_machine_guns_body_aim_conditions[6])
+						ui::SliderInt("##max_misses_body_aim", &sdk::g_config_system->sub_machine_guns_max_misses_body_aim, 1, 5, "%d miss");
+					ui::MultiSelect("safe point conditions", &sdk::g_config_system->sub_machine_guns_safe_point_conditions, { "prefer", "lethal", "lethal x2", "standing", "targeting limbs", "max misses", "forward", "sideways" });
+					ui::Keybind("##safe_point_key", &sdk::g_config_system->safe_point_key, &sdk::g_config_system->safe_point_key_style);
+					if (sdk::g_config_system->safe_point_key
+						|| sdk::g_config_system->sub_machine_guns_safe_point_conditions[0]
+						|| sdk::g_config_system->sub_machine_guns_safe_point_conditions[1]
+						|| sdk::g_config_system->sub_machine_guns_safe_point_conditions[2]
+						|| sdk::g_config_system->sub_machine_guns_safe_point_conditions[3]
+						|| sdk::g_config_system->sub_machine_guns_safe_point_conditions[4]
+						|| sdk::g_config_system->sub_machine_guns_safe_point_conditions[5]
+						|| sdk::g_config_system->sub_machine_guns_safe_point_conditions[6]
+						|| sdk::g_config_system->sub_machine_guns_safe_point_conditions[7]
+						) {
+						ui::SingleSelect("type", &sdk::g_config_system->sub_machine_guns_safe_point_type, { "normal", "strict" });
+						if (sdk::g_config_system->sub_machine_guns_safe_point_conditions[5])
+							ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->sub_machine_guns_max_misses_safe_point, 1, 5, "%d miss");
+					}
+					ui::Checkbox("double tap", &sdk::g_config_system->sub_machine_guns_double_tap);
+					ui::Keybind("##double_tap_key", &sdk::g_config_system->double_tap_key, &sdk::g_config_system->double_tap_key_style);
+					ui::SliderInt("max shift amount", &sdk::g_config_system->sub_machine_guns_max_shift_amount, 6, 15, "%d ticks");
+				}
+				else if (sdk::g_config_system->weapon_selection == 3) {
+					ui::Checkbox("remove recoil", &sdk::g_config_system->rifles_remove_recoil);
+					ui::SliderInt("accuracy boost", &sdk::g_config_system->rifles_accuracy_boost, 0, 100, "%d%%");
+					ui::Checkbox("quick stop", &sdk::g_config_system->rifles_quick_stop);
+					if (sdk::g_config_system->rifles_quick_stop) {
+						ui::SingleSelect("##type", &sdk::g_config_system->rifles_type, { "full", "auto" });
+						ui::Checkbox("between shots", &sdk::g_config_system->rifles_between_shots);
+					}
+
+					if (ui::Button(g_context->cvars().m_cl_lagcompensation->get_bool() ? "disable client lag compensation" : "enable client lag compensation")) {
+						if (valve::g_engine->in_game()
+							&& valve::g_local_player) {
+							g_context->switch_lagcompensation_state() = true;
+						}
+						else
+							g_context->cvars().m_cl_lagcompensation->set_int(!g_context->cvars().m_cl_lagcompensation->get_bool());
+					}
+
+					if (g_context->cvars().m_cl_lagcompensation->get_bool())
+						ui::SingleSelect("lag compensation", &sdk::g_config_system->rifles_lag_compensation, { "off", "normal", "high" });
+					ui::Checkbox("anti-aim correction", &sdk::g_config_system->anti_aim_correction);
+					ui::MultiSelect("body aim conditions", &sdk::g_config_system->rifles_body_aim_conditions, { "prefer", "unsafe", "lethal", "lethal x2", "double shot", "overlapping desync", "max misses", "forward", "sideways" });
+					ui::Keybind("##body_aim_key", &sdk::g_config_system->body_aim_key, &sdk::g_config_system->body_aim_key_style);
+					if (sdk::g_config_system->rifles_body_aim_conditions[6])
+						ui::SliderInt("##max_misses_body_aim", &sdk::g_config_system->rifles_max_misses_body_aim, 1, 5, "%d miss");
+					ui::MultiSelect("safe point conditions", &sdk::g_config_system->rifles_safe_point_conditions, { "prefer", "lethal", "lethal x2", "standing", "targeting limbs", "max misses", "forward", "sideways" });
+					ui::Keybind("##safe_point_key", &sdk::g_config_system->safe_point_key, &sdk::g_config_system->safe_point_key_style);
+					if (sdk::g_config_system->safe_point_key
+						|| sdk::g_config_system->rifles_safe_point_conditions[0]
+						|| sdk::g_config_system->rifles_safe_point_conditions[1]
+						|| sdk::g_config_system->rifles_safe_point_conditions[2]
+						|| sdk::g_config_system->rifles_safe_point_conditions[3]
+						|| sdk::g_config_system->rifles_safe_point_conditions[4]
+						|| sdk::g_config_system->rifles_safe_point_conditions[5]
+						|| sdk::g_config_system->rifles_safe_point_conditions[6]
+						|| sdk::g_config_system->rifles_safe_point_conditions[7]
+						) {
+						ui::SingleSelect("type", &sdk::g_config_system->rifles_safe_point_type, { "normal", "strict" });
+						if (sdk::g_config_system->rifles_safe_point_conditions[5])
+							ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->rifles_max_misses_safe_point, 1, 5, "%d miss");
+					}
+					ui::Checkbox("double tap", &sdk::g_config_system->rifles_double_tap);
+					ui::Keybind("##double_tap_key", &sdk::g_config_system->double_tap_key, &sdk::g_config_system->double_tap_key_style);
+					ui::SliderInt("max shift amount", &sdk::g_config_system->rifles_max_shift_amount, 6, 15, "%d ticks");
+				}
+				else if (sdk::g_config_system->weapon_selection == 4) {
+					ui::Checkbox("remove recoil", &sdk::g_config_system->auto_snipers_remove_recoil);
+					ui::SliderInt("accuracy boost", &sdk::g_config_system->auto_snipers_accuracy_boost, 0, 100, "%d%%");
+					ui::Checkbox("quick stop", &sdk::g_config_system->auto_snipers_quick_stop);
+					if (sdk::g_config_system->auto_snipers_quick_stop) {
+						ui::SingleSelect("##type", &sdk::g_config_system->auto_snipers_type, { "full", "auto" });
+						ui::Checkbox("between shots", &sdk::g_config_system->auto_snipers_between_shots);
+					}
+
+					if (ui::Button(g_context->cvars().m_cl_lagcompensation->get_bool() ? "disable client lag compensation" : "enable client lag compensation")) {
+						if (valve::g_engine->in_game()
+							&& valve::g_local_player) {
+							g_context->switch_lagcompensation_state() = true;
+						}
+						else
+							g_context->cvars().m_cl_lagcompensation->set_int(!g_context->cvars().m_cl_lagcompensation->get_bool());
+					}
+
+					if (g_context->cvars().m_cl_lagcompensation->get_bool())
+						ui::SingleSelect("lag compensation", &sdk::g_config_system->auto_snipers_lag_compensation, { "off", "normal", "high" });
+					ui::Checkbox("anti-aim correction", &sdk::g_config_system->anti_aim_correction);
+					ui::MultiSelect("body aim conditions", &sdk::g_config_system->auto_snipers_body_aim_conditions, { "prefer", "unsafe", "lethal", "lethal x2", "double shot", "overlapping desync", "max misses", "forward", "sideways" });
+					ui::Keybind("##body_aim_key", &sdk::g_config_system->body_aim_key, &sdk::g_config_system->body_aim_key_style);
+					if (sdk::g_config_system->auto_snipers_body_aim_conditions[6])
+						ui::SliderInt("##max_misses_body_aim", &sdk::g_config_system->auto_snipers_max_misses_body_aim, 1, 5, "%d miss");
+					ui::MultiSelect("safe point conditions", &sdk::g_config_system->auto_snipers_safe_point_conditions, { "prefer", "lethal", "lethal x2", "standing", "targeting limbs", "max misses", "forward", "sideways" });
+					ui::Keybind("##safe_point_key", &sdk::g_config_system->safe_point_key, &sdk::g_config_system->safe_point_key_style);
+					if (sdk::g_config_system->safe_point_key
+						|| sdk::g_config_system->auto_snipers_safe_point_conditions[0]
+						|| sdk::g_config_system->auto_snipers_safe_point_conditions[1]
+						|| sdk::g_config_system->auto_snipers_safe_point_conditions[2]
+						|| sdk::g_config_system->auto_snipers_safe_point_conditions[3]
+						|| sdk::g_config_system->auto_snipers_safe_point_conditions[4]
+						|| sdk::g_config_system->auto_snipers_safe_point_conditions[5]
+						|| sdk::g_config_system->auto_snipers_safe_point_conditions[6]
+						|| sdk::g_config_system->auto_snipers_safe_point_conditions[7]
+						) {
+						ui::SingleSelect("type", &sdk::g_config_system->auto_snipers_safe_point_type, { "normal", "strict" });
+						if (sdk::g_config_system->auto_snipers_safe_point_conditions[5])
+							ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->auto_snipers_max_misses_safe_point, 1, 5, "%d miss");
+					}
+					ui::Checkbox("double tap", &sdk::g_config_system->auto_snipers_double_tap);
+					ui::Keybind("##double_tap_key", &sdk::g_config_system->double_tap_key, &sdk::g_config_system->double_tap_key_style);
+					ui::SliderInt("max shift amount", &sdk::g_config_system->auto_snipers_max_shift_amount, 6, 15, "%d ticks");
+				}
+				else if (sdk::g_config_system->weapon_selection == 5) {
+					ui::Checkbox("remove recoil", &sdk::g_config_system->scout_remove_recoil);
+					ui::SliderInt("accuracy boost", &sdk::g_config_system->scout_accuracy_boost, 0, 100, "%d%%");
+					ui::Checkbox("quick stop", &sdk::g_config_system->scout_quick_stop);
+					if (sdk::g_config_system->scout_quick_stop) {
+						ui::SingleSelect("##type", &sdk::g_config_system->scout_type, { "full", "auto" });
+						ui::Checkbox("between shots", &sdk::g_config_system->scout_between_shots);
+					}
+
+					if (ui::Button(g_context->cvars().m_cl_lagcompensation->get_bool() ? "disable client lag compensation" : "enable client lag compensation")) {
+						if (valve::g_engine->in_game()
+							&& valve::g_local_player) {
+							g_context->switch_lagcompensation_state() = true;
+						}
+						else
+							g_context->cvars().m_cl_lagcompensation->set_int(!g_context->cvars().m_cl_lagcompensation->get_bool());
+					}
+
+					if (g_context->cvars().m_cl_lagcompensation->get_bool())
+						ui::SingleSelect("lag compensation", &sdk::g_config_system->scout_lag_compensation, { "off", "normal", "high" });
+					ui::Checkbox("anti-aim correction", &sdk::g_config_system->anti_aim_correction);
+					ui::MultiSelect("body aim conditions", &sdk::g_config_system->scout_body_aim_conditions, { "prefer", "unsafe", "lethal", "lethal x2", "double shot", "overlapping desync", "max misses", "forward", "sideways" });
+					ui::Keybind("##body_aim_key", &sdk::g_config_system->body_aim_key, &sdk::g_config_system->body_aim_key_style);
+					if (sdk::g_config_system->scout_body_aim_conditions[6])
+						ui::SliderInt("##max_misses_body_aim", &sdk::g_config_system->scout_max_misses_body_aim, 1, 5, "%d miss");
+					ui::MultiSelect("safe point conditions", &sdk::g_config_system->scout_safe_point_conditions, { "prefer", "lethal", "lethal x2", "standing", "targeting limbs", "max misses", "forward", "sideways" });
+					ui::Keybind("##safe_point_key", &sdk::g_config_system->safe_point_key, &sdk::g_config_system->safe_point_key_style);
+					if (sdk::g_config_system->safe_point_key
+						|| sdk::g_config_system->scout_safe_point_conditions[0]
+						|| sdk::g_config_system->scout_safe_point_conditions[1]
+						|| sdk::g_config_system->scout_safe_point_conditions[2]
+						|| sdk::g_config_system->scout_safe_point_conditions[3]
+						|| sdk::g_config_system->scout_safe_point_conditions[4]
+						|| sdk::g_config_system->scout_safe_point_conditions[5]
+						|| sdk::g_config_system->scout_safe_point_conditions[6]
+						|| sdk::g_config_system->scout_safe_point_conditions[7]
+						) {
+						ui::SingleSelect("type", &sdk::g_config_system->scout_safe_point_type, { "normal", "strict" });
+						if (sdk::g_config_system->scout_safe_point_conditions[5])
+							ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->scout_max_misses_safe_point, 1, 5, "%d miss");
+					}
+					ui::Checkbox("double tap", &sdk::g_config_system->scout_double_tap);
+					ui::Keybind("##double_tap_key", &sdk::g_config_system->double_tap_key, &sdk::g_config_system->double_tap_key_style);
+					ui::SliderInt("max shift amount", &sdk::g_config_system->scout_max_shift_amount, 6, 15, "%d ticks");
+				}
+				else if (sdk::g_config_system->weapon_selection == 6) {
+					ui::Checkbox("remove recoil", &sdk::g_config_system->awp_remove_recoil);
+					ui::SliderInt("accuracy boost", &sdk::g_config_system->awp_accuracy_boost, 0, 100, "%d%%");
+					ui::Checkbox("quick stop", &sdk::g_config_system->awp_quick_stop);
+					if (sdk::g_config_system->awp_quick_stop) {
+						ui::SingleSelect("##type", &sdk::g_config_system->awp_type, { "full", "auto" });
+						ui::Checkbox("between shots", &sdk::g_config_system->awp_between_shots);
+					}
+
+					if (ui::Button(g_context->cvars().m_cl_lagcompensation->get_bool() ? "disable client lag compensation" : "enable client lag compensation")) {
+						if (valve::g_engine->in_game()
+							&& valve::g_local_player) {
+							g_context->switch_lagcompensation_state() = true;
+						}
+						else
+							g_context->cvars().m_cl_lagcompensation->set_int(!g_context->cvars().m_cl_lagcompensation->get_bool());
+					}
+
+					if (g_context->cvars().m_cl_lagcompensation->get_bool())
+						ui::SingleSelect("lag compensation", &sdk::g_config_system->awp_lag_compensation, { "off", "normal", "high" });
+					ui::Checkbox("anti-aim correction", &sdk::g_config_system->anti_aim_correction);
+					ui::MultiSelect("body aim conditions", &sdk::g_config_system->awp_body_aim_conditions, { "prefer", "unsafe", "lethal", "lethal x2", "double shot", "overlapping desync", "max misses", "forward", "sideways" });
+					ui::Keybind("##body_aim_key", &sdk::g_config_system->body_aim_key, &sdk::g_config_system->body_aim_key_style);
+					if (sdk::g_config_system->awp_body_aim_conditions[6])
+						ui::SliderInt("##max_misses_body_aim", &sdk::g_config_system->awp_max_misses_body_aim, 1, 5, "%d miss");
+					ui::MultiSelect("safe point conditions", &sdk::g_config_system->awp_safe_point_conditions, { "prefer", "lethal", "lethal x2", "standing", "targeting limbs", "max misses", "forward", "sideways" });
+					ui::Keybind("##safe_point_key", &sdk::g_config_system->safe_point_key, &sdk::g_config_system->safe_point_key_style);
+					if (sdk::g_config_system->safe_point_key
+						|| sdk::g_config_system->awp_safe_point_conditions[0]
+						|| sdk::g_config_system->awp_safe_point_conditions[1]
+						|| sdk::g_config_system->awp_safe_point_conditions[2]
+						|| sdk::g_config_system->awp_safe_point_conditions[3]
+						|| sdk::g_config_system->awp_safe_point_conditions[4]
+						|| sdk::g_config_system->awp_safe_point_conditions[5]
+						|| sdk::g_config_system->awp_safe_point_conditions[6]
+						|| sdk::g_config_system->awp_safe_point_conditions[7]
+						) {
+						ui::SingleSelect("type", &sdk::g_config_system->awp_safe_point_type, { "normal", "strict" });
+						if (sdk::g_config_system->awp_safe_point_conditions[5])
+							ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->awp_max_misses_safe_point, 1, 5, "%d miss");
+					}
+					ui::Checkbox("double tap", &sdk::g_config_system->awp_double_tap);
+					ui::Keybind("##double_tap_key", &sdk::g_config_system->double_tap_key, &sdk::g_config_system->double_tap_key_style);
+					ui::SliderInt("max shift amount", &sdk::g_config_system->awp_max_shift_amount, 6, 15, "%d ticks");
+				}
+				else if (sdk::g_config_system->weapon_selection == 7) {
+					ui::Checkbox("remove recoil", &sdk::g_config_system->shotguns_remove_recoil);
+					ui::SliderInt("accuracy boost", &sdk::g_config_system->shotguns_accuracy_boost, 0, 100, "%d%%");
+					ui::Checkbox("quick stop", &sdk::g_config_system->shotguns_quick_stop);
+					if (sdk::g_config_system->shotguns_quick_stop) {
+						ui::SingleSelect("##type", &sdk::g_config_system->shotguns_type, { "full", "auto" });
+						ui::Checkbox("between shots", &sdk::g_config_system->shotguns_between_shots);
+					}
+
+					if (ui::Button(g_context->cvars().m_cl_lagcompensation->get_bool() ? "disable client lag compensation" : "enable client lag compensation")) {
+						if (valve::g_engine->in_game()
+							&& valve::g_local_player) {
+							g_context->switch_lagcompensation_state() = true;
+						}
+						else
+							g_context->cvars().m_cl_lagcompensation->set_int(!g_context->cvars().m_cl_lagcompensation->get_bool());
+					}
+
+					if (g_context->cvars().m_cl_lagcompensation->get_bool())
+						ui::SingleSelect("lag compensation", &sdk::g_config_system->shotguns_lag_compensation, { "off", "normal", "high" });
+					ui::Checkbox("anti-aim correction", &sdk::g_config_system->anti_aim_correction);
+					ui::MultiSelect("body aim conditions", &sdk::g_config_system->shotguns_body_aim_conditions, { "prefer", "unsafe", "lethal", "lethal x2", "double shot", "overlapping desync", "max misses", "forward", "sideways" });
+					ui::Keybind("##body_aim_key", &sdk::g_config_system->body_aim_key, &sdk::g_config_system->body_aim_key_style);
+					if (sdk::g_config_system->shotguns_body_aim_conditions[6])
+						ui::SliderInt("##max_misses_body_aim", &sdk::g_config_system->shotguns_max_misses_body_aim, 1, 5, "%d miss");
+					ui::MultiSelect("safe point conditions", &sdk::g_config_system->shotguns_safe_point_conditions, { "prefer", "lethal", "lethal x2", "standing", "targeting limbs", "max misses", "forward", "sideways" });
+					ui::Keybind("##safe_point_key", &sdk::g_config_system->safe_point_key, &sdk::g_config_system->safe_point_key_style);
+					if (sdk::g_config_system->safe_point_key
+						|| sdk::g_config_system->shotguns_safe_point_conditions[0]
+						|| sdk::g_config_system->shotguns_safe_point_conditions[1]
+						|| sdk::g_config_system->shotguns_safe_point_conditions[2]
+						|| sdk::g_config_system->shotguns_safe_point_conditions[3]
+						|| sdk::g_config_system->shotguns_safe_point_conditions[4]
+						|| sdk::g_config_system->shotguns_safe_point_conditions[5]
+						|| sdk::g_config_system->shotguns_safe_point_conditions[6]
+						|| sdk::g_config_system->shotguns_safe_point_conditions[7]
+						) {
+						ui::SingleSelect("type", &sdk::g_config_system->shotguns_safe_point_type, { "normal", "strict" });
+						if (sdk::g_config_system->shotguns_safe_point_conditions[5])
+							ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->shotguns_max_misses_safe_point, 1, 5, "%d miss");
+					}
+					ui::Checkbox("double tap", &sdk::g_config_system->shotguns_double_tap);
+					ui::Keybind("##double_tap_key", &sdk::g_config_system->double_tap_key, &sdk::g_config_system->double_tap_key_style);
+					ui::SliderInt("max shift amount", &sdk::g_config_system->shotguns_max_shift_amount, 6, 15, "%d ticks");
+				}
+				else if (sdk::g_config_system->weapon_selection == 8) {
+					ui::Checkbox("remove recoil", &sdk::g_config_system->machine_guns_remove_recoil);
+					ui::SliderInt("accuracy boost", &sdk::g_config_system->machine_guns_accuracy_boost, 0, 100, "%d%%");
+					ui::Checkbox("quick stop", &sdk::g_config_system->machine_guns_quick_stop);
+					if (sdk::g_config_system->machine_guns_quick_stop) {
+						ui::SingleSelect("##type", &sdk::g_config_system->machine_guns_type, { "full", "auto" });
+						ui::Checkbox("between shots", &sdk::g_config_system->machine_guns_between_shots);
+					}
+
+					if (ui::Button(g_context->cvars().m_cl_lagcompensation->get_bool() ? "disable client lag compensation" : "enable client lag compensation")) {
+						if (valve::g_engine->in_game()
+							&& valve::g_local_player) {
+							g_context->switch_lagcompensation_state() = true;
+						}
+						else
+							g_context->cvars().m_cl_lagcompensation->set_int(!g_context->cvars().m_cl_lagcompensation->get_bool());
+					}
+
+					if (g_context->cvars().m_cl_lagcompensation->get_bool())
+						ui::SingleSelect("lag compensation", &sdk::g_config_system->machine_guns_lag_compensation, { "off", "normal", "high" });
+					ui::Checkbox("anti-aim correction", &sdk::g_config_system->anti_aim_correction);
+					ui::MultiSelect("body aim conditions", &sdk::g_config_system->machine_guns_body_aim_conditions, { "prefer", "unsafe", "lethal", "lethal x2", "double shot", "overlapping desync", "max misses", "forward", "sideways" });
+					ui::Keybind("##body_aim_key", &sdk::g_config_system->body_aim_key, &sdk::g_config_system->body_aim_key_style);
+					if (sdk::g_config_system->machine_guns_body_aim_conditions[6])
+						ui::SliderInt("##max_misses_body_aim", &sdk::g_config_system->machine_guns_max_misses_body_aim, 1, 5, "%d miss");
+					ui::MultiSelect("safe point conditions", &sdk::g_config_system->machine_guns_safe_point_conditions, { "prefer", "lethal", "lethal x2", "standing", "targeting limbs", "max misses", "forward", "sideways" });
+					ui::Keybind("##safe_point_key", &sdk::g_config_system->safe_point_key, &sdk::g_config_system->safe_point_key_style);
+					if (sdk::g_config_system->safe_point_key
+						|| sdk::g_config_system->machine_guns_safe_point_conditions[0]
+						|| sdk::g_config_system->machine_guns_safe_point_conditions[1]
+						|| sdk::g_config_system->machine_guns_safe_point_conditions[2]
+						|| sdk::g_config_system->machine_guns_safe_point_conditions[3]
+						|| sdk::g_config_system->machine_guns_safe_point_conditions[4]
+						|| sdk::g_config_system->machine_guns_safe_point_conditions[5]
+						|| sdk::g_config_system->machine_guns_safe_point_conditions[6]
+						|| sdk::g_config_system->machine_guns_safe_point_conditions[7]
+						) {
+						ui::SingleSelect("type", &sdk::g_config_system->machine_guns_safe_point_type, { "normal", "strict" });
+						if (sdk::g_config_system->machine_guns_safe_point_conditions[5])
+							ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->machine_guns_max_misses_safe_point, 1, 5, "%d miss");
+					}
+					ui::Checkbox("double tap", &sdk::g_config_system->machine_guns_double_tap);
+					ui::Keybind("##double_tap_key", &sdk::g_config_system->double_tap_key, &sdk::g_config_system->double_tap_key_style);
+					ui::SliderInt("max shift amount", &sdk::g_config_system->machine_guns_max_shift_amount, 6, 15, "%d ticks");
+				}
+				else if (sdk::g_config_system->weapon_selection == 9) {
+					ui::Checkbox("remove recoil", &sdk::g_config_system->taser_remove_recoil);
+					ui::SliderInt("accuracy boost", &sdk::g_config_system->taser_accuracy_boost, 0, 100, "%d%%");
+					ui::Checkbox("quick stop", &sdk::g_config_system->taser_quick_stop);
+					if (sdk::g_config_system->taser_quick_stop) {
+						ui::SingleSelect("##type", &sdk::g_config_system->taser_type, { "full", "auto" });
+						ui::Checkbox("between shots", &sdk::g_config_system->taser_between_shots);
+					}
+
+					if (ui::Button(g_context->cvars().m_cl_lagcompensation->get_bool() ? "disable client lag compensation" : "enable client lag compensation")) {
+						if (valve::g_engine->in_game()
+							&& valve::g_local_player) {
+							g_context->switch_lagcompensation_state() = true;
+						}
+						else
+							g_context->cvars().m_cl_lagcompensation->set_int(!g_context->cvars().m_cl_lagcompensation->get_bool());
+					}
+
+					if (g_context->cvars().m_cl_lagcompensation->get_bool())
+						ui::SingleSelect("lag compensation", &sdk::g_config_system->taser_lag_compensation, { "off", "normal", "high" });
+					ui::Checkbox("anti-aim correction", &sdk::g_config_system->anti_aim_correction);
+					ui::MultiSelect("body aim conditions", &sdk::g_config_system->taser_body_aim_conditions, { "prefer", "unsafe", "lethal", "lethal x2", "double shot", "overlapping desync", "max misses", "forward", "sideways" });
+					ui::Keybind("##body_aim_key", &sdk::g_config_system->body_aim_key, &sdk::g_config_system->body_aim_key_style);
+					if (sdk::g_config_system->taser_body_aim_conditions[6])
+						ui::SliderInt("##max_misses_body_aim", &sdk::g_config_system->taser_max_misses_body_aim, 1, 5, "%d miss");
+					ui::MultiSelect("safe point conditions", &sdk::g_config_system->taser_safe_point_conditions, { "prefer", "lethal", "lethal x2", "standing", "targeting limbs", "max misses", "forward", "sideways" });
+					ui::Keybind("##safe_point_key", &sdk::g_config_system->safe_point_key, &sdk::g_config_system->safe_point_key_style);
+					if (sdk::g_config_system->safe_point_key
+						|| sdk::g_config_system->taser_safe_point_conditions[0]
+						|| sdk::g_config_system->taser_safe_point_conditions[1]
+						|| sdk::g_config_system->taser_safe_point_conditions[2]
+						|| sdk::g_config_system->taser_safe_point_conditions[3]
+						|| sdk::g_config_system->taser_safe_point_conditions[4]
+						|| sdk::g_config_system->taser_safe_point_conditions[5]
+						|| sdk::g_config_system->taser_safe_point_conditions[6]
+						|| sdk::g_config_system->taser_safe_point_conditions[7]
+						) {
+						ui::SingleSelect("type", &sdk::g_config_system->taser_safe_point_type, { "normal", "strict" });
+						if (sdk::g_config_system->taser_safe_point_conditions[5])
+							ui::SliderInt("##max_misses_safe_point", &sdk::g_config_system->taser_max_misses_safe_point, 1, 5, "%d miss");
+					}
+					ui::Checkbox("double tap", &sdk::g_config_system->taser_double_tap);
+					ui::Keybind("##double_tap_key", &sdk::g_config_system->double_tap_key, &sdk::g_config_system->double_tap_key_style);
+					ui::SliderInt("max shift amount", &sdk::g_config_system->taser_max_shift_amount, 6, 15, "%d ticks");
+				}
 			}
 			ui::EndChild();
 		}
@@ -213,6 +896,8 @@ namespace supremacy {
 				ui::SliderInt("pitch", &sdk::g_config_system->pitch, -89, 89, "%d°%");
 				ui::SingleSelect("yaw base", &sdk::g_config_system->yaw_base, { "local view", "closest", "average", "fov" });
 				ui::SliderInt("yaw", &sdk::g_config_system->yaw, -180, 180, "%d°%");
+				ui::Checkbox("freestanding", &sdk::g_config_system->freestanding);
+				ui::Keybind("##freestanding_key", &sdk::g_config_system->freestanding_key, &sdk::g_config_system->freestanding_key_style);
 				ui::SliderInt("jitter range", &sdk::g_config_system->jitter_range, 0, 180, "%d°%");
 				ui::SingleSelect("jitter switch", &sdk::g_config_system->jitter_switch, { "sending packet", "random" });
 				ui::SliderInt("rotate range", &sdk::g_config_system->rotate_range, 0, 360, "%d°%");
@@ -224,9 +909,9 @@ namespace supremacy {
 					ui::SliderInt("body lean", &sdk::g_config_system->body_lean, -180, 180, "%d°%");
 					ui::SliderInt("inverted body lean", &sdk::g_config_system->inverted_body_lean, -180, 180, "%d°%");
 					ui::SingleSelect("on shot side", &sdk::g_config_system->on_shot_side, { "off", "left", "right", "opposite", "switch" });
-				}	
-				ui::SingleSelect("freestanding", &sdk::g_config_system->freestanding, { "off", "default", "peek fake", "peek real" });
-				ui::Keybind("##freestanding_key", &sdk::g_config_system->freestanding_key, &sdk::g_config_system->freestanding_key_style);
+					if (sdk::g_config_system->body_yaw == 1)
+						ui::SingleSelect("automatic side selection", &sdk::g_config_system->automatic_side_selection, { "off", "peek fake", "peek real" });
+				}								
 				ui::Text("manual left");
 				ui::Keybind("##manual_left_key", &sdk::g_config_system->manual_left_key);
 				ui::Text("manual right");
@@ -412,7 +1097,7 @@ namespace supremacy {
 			ui::BeginChild("settings", ImVec2(ui::GetWindowSize().x / 2 - 36 + 4, ui::GetWindowSize().y / 2 - 80 - 27 + 65 + 31 - 30 - 30 - 120 + 24));
 			{
 				ui::Text("menu key");
-				if (ui::Keybind("##menu_key", &sdk::g_config_system->menu_key))
+				ui::Keybind("##menu_key", &sdk::g_config_system->menu_key);
 
 				ui::Text("menu color");
 				if (color_picker("##menu_color", sdk::g_config_system->menu_color, false)) {

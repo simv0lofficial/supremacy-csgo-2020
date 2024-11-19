@@ -342,11 +342,11 @@ namespace supremacy::hacks
 		static const auto wpn_data = []() {
 				valve::weapon_data_t wpn_data{};
 
-				wpn_data.m_dmg = 115;
+				wpn_data.m_dmg = 200;
 				wpn_data.m_range = 8192.f;
-				wpn_data.m_penetration = 2.5f;
-				wpn_data.m_range_modifier = 0.99f;
-				wpn_data.m_armor_ratio = 1.95f;
+				wpn_data.m_penetration = 6.f;
+				wpn_data.m_range_modifier = 1.f;
+				wpn_data.m_armor_ratio = 2.f;
 
 				return wpn_data;
 			}();
@@ -390,16 +390,13 @@ namespace supremacy::hacks
 				cur_dist += trace.m_fraction * dist_remaining;
 				cur_dmg *= std::pow(wpn_data.m_range_modifier, cur_dist / 500.f);
 
-				if (trace.m_hit_entity) {
-					const auto is_player = trace.m_hit_entity->is_player();
-					if (trace.m_hit_entity == target) {
-						data.m_hit_player = static_cast<valve::c_player*>(trace.m_hit_entity);
-						data.m_hitbox = trace.m_hitbox;
-						data.m_hitgroup = trace.m_hitgroup;
-						data.m_dmg = static_cast<int>(cur_dmg);
-
-						return data;
-					}
+				if (trace.m_hit_entity
+					&& trace.m_hit_entity == target) {
+					data.m_hit_player = static_cast<valve::c_player*>(trace.m_hit_entity);
+					data.m_hitbox = trace.m_hitbox;
+					data.m_hitgroup = trace.m_hitgroup;
+					data.m_dmg = static_cast<int>(cur_dmg);
+					return data;
 				}
 
 				if (cur_dist > 3000.f

@@ -251,9 +251,6 @@ namespace supremacy::hacks {
 
 		const auto& velocity = valve::g_local_player->velocity();
 		const auto speed_2d = velocity.length_2d();
-		const auto ideal_strafe = std::min(90.f, math::to_deg(std::asin(15.f / speed_2d)));
-
-		auto wish_angles = user_cmd.m_view_angles;
 
 		float wish_dir{};
 		bool holding_w = user_cmd.m_buttons & valve::e_buttons::in_forward;
@@ -279,6 +276,14 @@ namespace supremacy::hacks {
 			wish_dir += 90.f;
 		else if (holding_d)
 			wish_dir -= 90.f;
+
+		if (wish_dir == 0.f
+			&& speed_2d < 30.f)
+			return;
+
+		const auto ideal_strafe = std::min(90.f, math::to_deg(std::asin(15.f / speed_2d)));
+
+		auto wish_angles = user_cmd.m_view_angles;
 
 		wish_angles.y = std::remainder(wish_angles.y + wish_dir, 360.f);
 
@@ -313,7 +318,11 @@ namespace supremacy::hacks {
 				user_cmd.m_move.y = -450.f;
 			}
 
-			rotate(user_cmd, wish_angles, valve::g_local_player->move_type());
+			rotate(
+				user_cmd, wish_angles,
+				valve::g_local_player->flags(),
+				valve::g_local_player->move_type()
+			);
 		}
 	}
 
@@ -367,7 +376,7 @@ namespace supremacy::hacks {
 
 		const auto max_weapon_speed = weapon->max_speed();
 
-		auto finalwishspeed = std::min(max_weapon_speed, 250.f);
+		auto finalwishspeed = std::min(max_weapon_speed, 260.f);
 
 		const auto ducking =
 			user_cmd.m_buttons & valve::e_buttons::in_duck
@@ -385,7 +394,7 @@ namespace supremacy::hacks {
 
 			if (!ducking
 				|| slow_down_to_fast_nigga)
-				finalwishspeed *= std::min(1.f, max_weapon_speed / 250.f);
+				finalwishspeed *= std::min(1.f, max_weapon_speed / 260.f);
 		}
 
 		if (ducking
@@ -410,7 +419,7 @@ namespace supremacy::hacks {
 
 		finalwishspeed = speed_2d - target_speed;
 
-		if ((speed_2d - target_speed) < 0.f) {
+		if (finalwishspeed < 0.f) {
 			m_max_player_speed = m_max_weapon_speed = target_speed;
 
 			modify_move(user_cmd, velocity);
@@ -494,46 +503,102 @@ namespace supremacy::hacks {
 		user_cmd.m_move.x = std::clamp(user_cmd.m_move.x, -450.f, 450.f);
 		user_cmd.m_move.y = std::clamp(user_cmd.m_move.y, -450.f, 450.f);
 		user_cmd.m_move.z = std::clamp(user_cmd.m_move.z, -320.f, 320.f);
+
+		if (valve::g_local_player->move_type() != valve::e_move_type::walk)
+			return;
+
+		user_cmd.m_buttons &= ~(
+			valve::e_buttons::in_forward
+			| valve::e_buttons::in_back
+			| valve::e_buttons::in_move_right
+			| valve::e_buttons::in_move_left
+			);
+
+		if (user_cmd.m_move.x != 0.f)
+			user_cmd.m_buttons |=
+			(sdk::g_config_system->slide_walk ? user_cmd.m_move.x < 0.f : user_cmd.m_move.x > 0.f)
+			? valve::e_buttons::in_forward : valve::e_buttons::in_back;
+
+		if (user_cmd.m_move.y == 0.f)
+			return;
+
+		user_cmd.m_buttons |=
+			(sdk::g_config_system->slide_walk ? user_cmd.m_move.y < 0.f : user_cmd.m_move.y > 0.f)
+			? valve::e_buttons::in_move_right : valve::e_buttons::in_move_left;
 	}
 
 	void c_movement::rotate(
-		valve::user_cmd_t& user_cmd,
-		const qangle_t& wish_angles, const valve::e_move_type move_type
+		valve::user_cmd_t& user_cmd, const qangle_t& wish_angles,
+		const valve::e_ent_flags flags, const valve::e_move_type move_type
 	) const {
-		vec3_t view_fwd, view_right, view_up, cmd_fwd, cmd_right, cmd_up;
-		normalize(user_cmd);
-		math::angle_vectors(wish_angles, &view_fwd, &view_right, &view_up);
-		math::angle_vectors(user_cmd.m_view_angles, &cmd_fwd, &cmd_right, &cmd_up);
-		const auto v8 = sqrtf((view_fwd.x * view_fwd.x) + (view_fwd.y * view_fwd.y));
-		const auto v10 = sqrtf((view_right.x * view_right.x) + (view_right.y * view_right.y));
-		const auto v12 = sqrtf(view_up.z * view_up.z);
-		const vec3_t norm_view_fwd((1.f / v8) * view_fwd.x, (1.f / v8) * view_fwd.y, 0.f);
-		const vec3_t norm_view_right((1.f / v10) * view_right.x, (1.f / v10) * view_right.y, 0.f);
-		const vec3_t norm_view_up(0.f, 0.f, (1.f / v12) * view_up.z);
-		const auto v14 = sqrtf((cmd_fwd.x * cmd_fwd.x) + (cmd_fwd.y * cmd_fwd.y));
-		const auto v16 = sqrtf((cmd_right.x * cmd_right.x) + (cmd_right.y * cmd_right.y));
-		const auto v18 = sqrtf(cmd_up.z * cmd_up.z);
-		const vec3_t norm_cmd_fwd((1.f / v14) * cmd_fwd.x, (1.f / v14) * cmd_fwd.y, 0.f);
-		const vec3_t norm_cmd_right((1.f / v16) * cmd_right.x, (1.f / v16) * cmd_right.y, 0.f);
-		const vec3_t norm_cmd_up(0.f, 0.f, (1.f / v18) * cmd_up.z);
-		const auto v22 = norm_view_fwd.x * user_cmd.m_move.x;
-		const auto v26 = norm_view_fwd.y * user_cmd.m_move.x;
-		const auto v28 = norm_view_fwd.z * user_cmd.m_move.x;
-		const auto v24 = norm_view_right.x * user_cmd.m_move.y;
-		const auto v23 = norm_view_right.y * user_cmd.m_move.y;
-		const auto v25 = norm_view_right.z * user_cmd.m_move.y;
-		const auto v30 = norm_view_up.x * user_cmd.m_move.z;
-		const auto v27 = norm_view_up.z * user_cmd.m_move.z;
-		const auto v29 = norm_view_up.y * user_cmd.m_move.z;
-		user_cmd.m_move.x = ((((norm_cmd_fwd.x * v24) + (norm_cmd_fwd.y * v23)) + (norm_cmd_fwd.z * v25))
-			+ (((norm_cmd_fwd.x * v22) + (norm_cmd_fwd.y * v26)) + (norm_cmd_fwd.z * v28)))
-			+ (((norm_cmd_fwd.y * v30) + (norm_cmd_fwd.x * v29)) + (norm_cmd_fwd.z * v27));
-		user_cmd.m_move.y = ((((norm_cmd_right.x * v24) + (norm_cmd_right.y * v23)) + (norm_cmd_right.z * v25))
-			+ (((norm_cmd_right.x * v22) + (norm_cmd_right.y * v26)) + (norm_cmd_right.z * v28)))
-			+ (((norm_cmd_right.x * v29) + (norm_cmd_right.y * v30)) + (norm_cmd_right.z * v27));
-		user_cmd.m_move.z = ((((norm_cmd_up.x * v23) + (norm_cmd_up.y * v24)) + (norm_cmd_up.z * v25))
-			+ (((norm_cmd_up.x * v26) + (norm_cmd_up.y * v22)) + (norm_cmd_up.z * v28)))
-			+ (((norm_cmd_up.x * v30) + (norm_cmd_up.y * v29)) + (norm_cmd_up.z * v27));
+		if (user_cmd.m_view_angles.z != 0.f
+			&& !(flags & valve::e_ent_flags::on_ground))
+			user_cmd.m_move.y = 0.f;
+
+		auto move_2d = vec2_t(user_cmd.m_move.x, user_cmd.m_move.y);
+
+		if (const auto speed_2d = move_2d.length()) {
+			const auto delta = user_cmd.m_view_angles.y - wish_angles.y;
+
+			vec2_t v1;
+
+			math::sin_cos(
+				math::to_rad(
+					std::remainder(
+						math::to_deg(
+							std::atan2(move_2d.y / speed_2d, move_2d.x / speed_2d)
+						) + delta, 360.f
+					)
+				), v1.x, v1.y
+			);
+
+			const auto cos_x = std::cos(
+				math::to_rad(
+					std::remainder(
+						math::to_deg(std::atan2(0.f, speed_2d)), 360.f
+					)
+				)
+			);
+
+			move_2d.x = cos_x * v1.y * speed_2d;
+			move_2d.y = cos_x * v1.x * speed_2d;
+
+			if (move_type == valve::e_move_type::ladder) {
+				if (wish_angles.x < 45.f
+					&& std::abs(delta) <= 65.f
+					&& user_cmd.m_view_angles.x >= 45.f) {
+					move_2d.x *= -1.f;
+				}
+			}
+			else if (std::abs(user_cmd.m_view_angles.x) > 90.f)
+				move_2d.x *= -1.f;
+		}
+
+		user_cmd.m_move.x = move_2d.x;
+		user_cmd.m_move.y = move_2d.y;
+
+		user_cmd.m_buttons &= ~(
+			valve::e_buttons::in_forward
+			| valve::e_buttons::in_back
+			| valve::e_buttons::in_move_right
+			| valve::e_buttons::in_move_left
+			);
+
+		if (move_type == valve::e_move_type::ladder) {
+			if (std::abs(user_cmd.m_move.x) > 200.f)
+				user_cmd.m_buttons |=
+				user_cmd.m_move.x > 0.f
+				? valve::e_buttons::in_forward : valve::e_buttons::in_back;
+
+			if (std::abs(user_cmd.m_move.y) <= 200.f)
+				return;
+
+			user_cmd.m_buttons |=
+				user_cmd.m_move.y > 0.f
+				? valve::e_buttons::in_move_right : valve::e_buttons::in_move_left;
+
+			return;
+		}
 
 		if (sdk::g_config_system->slide_walk
 			&& move_type == valve::e_move_type::walk) {
@@ -542,8 +607,10 @@ namespace supremacy::hacks {
 				user_cmd.m_move.x < 0.f
 				? valve::e_buttons::in_forward : valve::e_buttons::in_back;
 
-			if (user_cmd.m_move.y != 0.f)
-				user_cmd.m_buttons |=
+			if (user_cmd.m_move.y == 0.f)
+				return;
+
+			user_cmd.m_buttons |=
 				user_cmd.m_move.y < 0.f
 				? valve::e_buttons::in_move_right : valve::e_buttons::in_move_left;
 
@@ -552,66 +619,41 @@ namespace supremacy::hacks {
 
 		if (user_cmd.m_move.x != 0.f)
 			user_cmd.m_buttons |=
-			user_cmd.m_move.x < 0.f
-			? valve::e_buttons::in_back : valve::e_buttons::in_forward;
+			user_cmd.m_move.x > 0.f
+			? valve::e_buttons::in_forward : valve::e_buttons::in_back;
 
+		if (user_cmd.m_move.y == 0.f)
+			return;
 
-		if (user_cmd.m_move.y != 0.f)
-			user_cmd.m_buttons |=
-			user_cmd.m_move.y < 0.f
-			? valve::e_buttons::in_move_left : valve::e_buttons::in_move_right;
+		user_cmd.m_buttons |=
+			user_cmd.m_move.y > 0.f
+			? valve::e_buttons::in_move_right : valve::e_buttons::in_move_left;
 	}
 
-	void c_movement::peek_assistence(qangle_t& wish_angles, valve::user_cmd_t& user_cmd) {
-		if (!key_handler::check_key(sdk::g_config_system->peek_assistence_key, sdk::g_config_system->peek_assistence_key_style)) {
+	bool c_movement::peek_assistence(valve::user_cmd_t& user_cmd) {
+		if (!g_context->should_return())
+			return false;
+
+		const auto current_position = valve::g_local_player->abs_origin();
+		const auto difference = current_position - g_context->start_position();
+
+		if (difference.length_2d() > 5.f) {
+			const auto angle = math::calculate_angle(valve::g_local_player->abs_origin(), g_context->start_position());
+			auto wish_angles = user_cmd.m_view_angles;
+			wish_angles = angle;
+			user_cmd.m_move.x = 450.f;
+			user_cmd.m_move.y = 0.f;
+			rotate(
+				user_cmd, wish_angles,
+				valve::g_local_player->flags(),
+				valve::g_local_player->move_type()
+			);
+			return true;			
+		}
+		else
 			g_context->should_return() = false;
-			g_context->start_position() = vec3_t{};
 
-			return;
-		}
-
-		if (g_context->start_position().x == 0.f
-			|| g_context->start_position().y == 0.f
-			|| g_context->start_position().z == 0.f
-			) {
-			g_context->start_position() = valve::g_local_player->abs_origin();
-
-			if (!(g_eng_pred->local_data().at((user_cmd.m_number) % 150).m_net_vars.m_flags & valve::e_ent_flags::on_ground)) {
-				valve::ray_t ray(g_context->start_position(), g_context->start_position() - vec3_t(0.f, 0.f, 1000.f));
-				valve::trace_filter_world_only_t filter;
-				valve::trace_t trace;
-
-				valve::g_engine_trace->trace_ray(ray, valve::e_mask::solid, &filter, &trace);
-
-				if (trace.m_fraction < 1.f)
-					g_context->start_position() = trace.m_end_pos + vec3_t(0.f, 0.f, 2.f);
-			}
-		}
-		else {
-			if ((g_context->flags() & e_context_flags::can_shoot
-				&& g_context->will_shoot(valve::g_local_player->weapon(), user_cmd)))
-				g_context->should_return() = true;
-
-			if (!g_context->should_return())
-				return;
-
-			const auto current_position = valve::g_local_player->abs_origin();
-			const auto difference = current_position - g_context->start_position();
-
-			if (difference.length_2d() > 5.f) {
-				user_cmd.m_buttons &= ~valve::e_buttons::in_jump;
-				const auto chocked_ticks = (user_cmd.m_number % 2) != 1 ? (14 - valve::g_client_state->m_choked_cmds) : valve::g_client_state->m_choked_cmds;
-				const auto angle = math::calculate_angle(valve::g_local_player->abs_origin(), g_context->start_position());
-
-				wish_angles = angle;
-				user_cmd.m_move.x = 450.f - (1.2f * chocked_ticks);
-				user_cmd.m_move.y = 0.f;
-			}
-			else
-				g_context->should_return() = false;
-
-			rotate(user_cmd, wish_angles, valve::g_local_player->move_type());
-		}
+		return false;
 	}
 
 	void c_movement::on_create_move(valve::user_cmd_t& user_cmd) {
@@ -661,9 +703,11 @@ namespace supremacy::hacks {
 		}
 
 		const auto stopped = stop(user_cmd);
+		const auto returned = peek_assistence(user_cmd);
 		const auto forced_lby_update = force_lby_update(user_cmd);
 
-		if (!stopped) {
+		if (!stopped
+			&& !returned) {
 			if (key_handler::check_key(sdk::g_config_system->slow_motion_key, sdk::g_config_system->slow_motion_key_style)
 				&& !(user_cmd.m_buttons & valve::e_buttons::in_jump)
 				&& valve::g_local_player->flags() & valve::e_ent_flags::on_ground

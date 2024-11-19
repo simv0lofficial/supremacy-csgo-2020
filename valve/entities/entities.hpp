@@ -64,9 +64,9 @@ namespace supremacy::valve {
 
 		__forceinline int& last_setup_bones_frame( );
 
-		__forceinline float& last_setup_bones_time( );
+		__forceinline float& last_bone_setup_time( );
 
-		__forceinline unsigned long& mdl_bone_counter( );
+		__forceinline unsigned long& most_recent_model_bone_counter( );
 
 		__forceinline bone_accessor_t& bone_accessor( );
 
@@ -230,6 +230,8 @@ namespace supremacy::valve {
 
 		__forceinline float get_sequence_move_dist(studio_hdr_t* studio_hdr, int sequence);
 
+		__forceinline float get_layer_sequence_cycle_rate(anim_layer_t* layer, int sequence);
+
 		__forceinline void setup_movement();
 
 		__forceinline void update_client_side_anim( );
@@ -295,6 +297,8 @@ namespace supremacy::valve {
 		__forceinline float& third_person_recoil( );
 
 		__forceinline int lookup_bone( const char* name );
+
+		__forceinline int lookup_sequence(const char* name);
 
 		__forceinline int& armor_value( );
 

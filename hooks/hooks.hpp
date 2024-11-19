@@ -93,14 +93,8 @@ namespace supremacy::hooks {
 	);
 	inline decltype( &on_latch_interpolated_vars ) orig_on_latch_interpolated_vars{};
 
-	int process_interpolated_list();
-	inline decltype (&process_interpolated_list) orig_process_interpolated_list{};
-
 	bool __fastcall should_interpolate( valve::c_player* const ecx, const std::uintptr_t edx );
 	inline decltype( &should_interpolate ) orig_should_interpolate{};
-
-	bool __fastcall interpolate_viewmodel(valve::c_entity* const ecx, const std::uintptr_t edx, float time);
-	inline decltype(&interpolate_viewmodel) orig_interpolate_viewmodel{};
 
 	bool __fastcall write_user_cmd_delta_to_buffer(
 		const std::uintptr_t ecx, const std::uintptr_t edx,

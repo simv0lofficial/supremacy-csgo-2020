@@ -38,7 +38,6 @@ namespace supremacy::hacks {
 
 		const auto backup_in_prediction = valve::g_prediction->m_in_prediction;
 		const auto backup_first_time_predicted = valve::g_prediction->m_first_time_predicted;
-		const auto backup_velocity_modifier = valve::g_local_player->velocity_modifier();
 
 		valve::g_prediction->m_in_prediction = true;
 		valve::g_prediction->m_first_time_predicted = false;
@@ -46,6 +45,8 @@ namespace supremacy::hacks {
 		valve::g_move_helper->set_host(valve::g_local_player);
 
 		valve::g_movement->start_track_prediction_errors(valve::g_local_player);
+
+		const auto backup_velocity_modifier = valve::g_local_player->velocity_modifier();
 
 		valve::g_prediction->setup_move(valve::g_local_player, user_cmd, valve::g_move_helper, &m_move_data);
 
@@ -57,6 +58,27 @@ namespace supremacy::hacks {
 
 		valve::g_move_helper->set_host(nullptr);
 
+		update_accuracy();
+
+		m_local_data.at(user_cmd->m_number % 150).save(user_cmd->m_number);
+
+		valve::g_local_player->velocity_modifier() = backup_velocity_modifier;
+
+		valve::g_prediction->m_in_prediction = backup_in_prediction;
+		valve::g_prediction->m_first_time_predicted = backup_first_time_predicted;
+
+		update_shoot_pos();
+	}
+
+	void c_eng_pred::restore() {
+		g_context->addresses().m_pred_player = nullptr;
+		*g_context->addresses().m_pred_seed = -1;
+
+		valve::g_global_vars->m_cur_time = m_backup.m_cur_time;
+		valve::g_global_vars->m_frame_time = m_backup.m_frame_time;
+	}
+
+	void c_eng_pred::update_accuracy() {
 		if (const auto weapon = valve::g_local_player->weapon()) {
 			weapon->update_inaccuracy();
 
@@ -76,22 +98,6 @@ namespace supremacy::hacks {
 		}
 		else
 			m_inaccuracy = m_spread = 0.f;
-
-		m_local_data.at(user_cmd->m_number % 150).save(user_cmd->m_number);
-
-		valve::g_prediction->m_in_prediction = backup_in_prediction;
-		valve::g_prediction->m_first_time_predicted = backup_first_time_predicted;
-		valve::g_local_player->velocity_modifier() = backup_velocity_modifier;
-
-		update_shoot_pos();
-	}
-
-	void c_eng_pred::restore() {
-		g_context->addresses().m_pred_player = nullptr;
-		*g_context->addresses().m_pred_seed = -1;
-
-		valve::g_global_vars->m_cur_time = m_backup.m_cur_time;
-		valve::g_global_vars->m_frame_time = m_backup.m_frame_time;
 	}
 
 	void c_eng_pred::update_shoot_pos() const {
@@ -108,22 +114,20 @@ namespace supremacy::hacks {
 
 		if (anim_state->m_player
 			&& (anim_state->m_landing || anim_state->m_duck_amount || anim_state->m_player->ground_entity() == valve::e_ent_handle::invalid)) {
-			const auto bone_index = valve::g_local_player->lookup_bone(xorstr_("head_0"));
+			const auto bone_index = valve::g_local_player->lookup_bone("head_0");
 			if (bone_index != -1) {
 				vec3_t head_pos{
 					bones[bone_index][0u][3u],
 					bones[bone_index][1u][3u],
-					bones[bone_index][2u][3u]
+					bones[bone_index][2u][3u] + 1.7f
 				};
 
-				head_pos.z += 1.7f;
-
 				if (eye_pos.z > head_pos.z) {
-					float v9 = 0.f;
-					float  v10 = (std::fabsf(eye_pos.z - head_pos.z) - 4.f) / 6.f;
-					if (v10 >= 0.f)
-						v9 = fminf(v10, 1.f);
-					eye_pos.z += ((head_pos.z - eye_pos.z) * (((v9 * v9) * 3.f) - (((v9 * v9) * 2.f) * v9)));
+					const auto v5 = std::abs(eye_pos.z - head_pos.z);
+					const auto v6 = std::max((v5 - 4.f) / 6.f, 0.f);
+					const auto v7 = std::min(v6, 1.f);
+
+					eye_pos.z += (((v7 * v7) * 3.f) - ((v7 + v7) * (v7 * v7))) * (head_pos.z - eye_pos.z);
 				}
 			}
 		}

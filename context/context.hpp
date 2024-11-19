@@ -72,10 +72,10 @@ namespace supremacy {
 			random_int_t		m_random_int{};
 			random_seed_t		m_random_seed{};
 
-			std::uintptr_t		m_reset_anim_state{}, m_update_anim_state{},
+			std::uintptr_t		m_reset_anim_state{}, m_update_anim_state{}, m_weapon_prefix{},
 								m_set_abs_angles{}, m_set_abs_origin{},
 								m_lookup_seq_act{}, m_breakable{}, m_user_cmd_calc_checksum{},
-								m_set_collision_bounds{}, m_invalidate_bone_cache{}, m_lookup_bone{},
+								m_set_collision_bounds{}, m_invalidate_bone_cache{}, m_lookup_bone{}, m_lookup_sequence{},
 								m_trace_filter_simple_vtable{}, m_trace_filter_skip_two_entities_vtable{},
 								m_write_user_cmd{}, m_weapon_system{}, m_calc_shotgun_spread{},
 								m_key_values_init{}, m_key_values_load_from_buffer{}, m_cam_sv_cheats_ret{},
@@ -127,7 +127,7 @@ namespace supremacy {
 			bool m_on_local_server{};
 		}						m_net_info{};
 
-		vec3_t					m_shoot_pos{}, m_start_position{}, m_last_sent_origin{};
+		vec3_t					m_shoot_pos{}, m_start_position{}, m_last_sent_origin{}, m_view_angles{};
 		int						m_last_sent_cmd_number{}, m_last_cmd_number{};
 		bool					m_should_auto_buy{}, m_freeze_time{}, m_allow_anim_update{},
 								m_allow_setup_bones{}, m_force_bone_mask{},
@@ -192,6 +192,8 @@ namespace supremacy {
 		__forceinline bool& broke_lc( );
 
 		__forceinline vec3_t& last_sent_origin( );
+
+		__forceinline vec3_t& view_angles();
 
 		HMODULE h_module;
 

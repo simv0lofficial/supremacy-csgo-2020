@@ -58,25 +58,6 @@ namespace math {
 		return angles;
 	}
 
-	__forceinline float angle_normalize(float angle) {
-		float rot;
-
-		if (!std::isfinite(angle)) {
-			angle = 0.f;
-
-			return angle;
-		}
-
-		if (angle >= -180.f 
-			&& angle <= 180.f)
-			return angle;
-
-		rot = round(abs(angle / 360.f));
-		angle = (angle < 0.f) ? angle + (360.f * rot) : angle - (360.f * rot);
-
-		return angle;
-	}
-
 	__forceinline void concat_transforms( const mat3x4_t& in0, const mat3x4_t& in1, mat3x4_t& out ) {
 		out[ 0 ][ 0 ] = in0[ 0 ][ 0 ] * in1[ 0 ][ 0 ] + in0[ 0 ][ 1 ] * in1[ 1 ][ 0 ] + in0[ 0 ][ 2 ] * in1[ 2 ][ 0 ];
 		out[ 0 ][ 1 ] = in0[ 0 ][ 0 ] * in1[ 0 ][ 1 ] + in0[ 0 ][ 1 ] * in1[ 1 ][ 1 ] + in0[ 0 ][ 2 ] * in1[ 2 ][ 1 ];

@@ -196,13 +196,13 @@ namespace supremacy::valve {
 		);
 	}
 
-	__forceinline float& c_entity::last_setup_bones_time( ) {
+	__forceinline float& c_entity::last_bone_setup_time( ) {
 		return *reinterpret_cast< float* >(
 			reinterpret_cast< std::uintptr_t >( this ) + 0x2924u
 		);
 	}
 
-	__forceinline unsigned long& c_entity::mdl_bone_counter( ) {
+	__forceinline unsigned long& c_entity::most_recent_model_bone_counter( ) {
 		return *reinterpret_cast< unsigned long* >(
 			reinterpret_cast< std::uintptr_t >( this ) + 0x2690u
 		);
@@ -473,7 +473,7 @@ namespace supremacy::valve {
 	__forceinline float c_weapon::max_speed( ) {
 		using fn_t = float( __thiscall* )( decltype( this ) );
 
-		return ( *reinterpret_cast< fn_t** >( this ) )[ 441u ]( this );
+		return ( *reinterpret_cast< fn_t** >( this ) )[(TWENTYTWENTY ? 441u : 438u) ]( this );
 	}
 
 	__forceinline e_item_index& c_weapon::item_index( ) {
@@ -567,24 +567,24 @@ namespace supremacy::valve {
 	__forceinline float c_weapon::spread( ) {
 		using fn_t = float( __thiscall* )( decltype( this ) );
 
-		return ( *reinterpret_cast< fn_t** >( this ) )[ 452u ]( this );
+		return ( *reinterpret_cast< fn_t** >( this ) )[(TWENTYTWENTY ? 452u : 449u) ]( this );
 	}
 
 	__forceinline float c_weapon::inaccuracy( ) {
 		using fn_t = float( __thiscall* )( decltype( this ) );
 
-		return ( *reinterpret_cast< fn_t** >( this ) )[ 482u ]( this );
+		return ( *reinterpret_cast< fn_t** >( this ) )[(TWENTYTWENTY ? 482u:479u )]( this );
 	}
 
 	__forceinline void c_weapon::update_inaccuracy( ) {
 		using fn_t = void( __thiscall* )( decltype( this ) );
 
-		return ( *reinterpret_cast< fn_t** >( this ) )[ 483u ]( this );
+		return ( *reinterpret_cast< fn_t** >( this ) )[(TWENTYTWENTY ? 483u:480u) ]( this );
 	}
 
 	__forceinline weapon_data_t* c_weapon::wpn_data( ) {
 		using fn_t = weapon_data_t*( __thiscall* )(decltype(this));
-		return ( *reinterpret_cast< fn_t** >( this ) )[ 460u ]( this );
+		return ( *reinterpret_cast< fn_t** >( this ) )[(TWENTYTWENTY ? 460u:457u) ]( this );
 	}
 
 	__forceinline bool& c_weapon::in_reload( ) {
@@ -798,6 +798,12 @@ namespace supremacy::valve {
 		return ret.length();
 	}
 
+	__forceinline float c_player::get_layer_sequence_cycle_rate(anim_layer_t* layer, int sequence) {
+		using fn_t = float(__thiscall*)(decltype(this), anim_layer_t*, int);
+
+		return (*reinterpret_cast<fn_t**>(this))[222u](this, layer, sequence);
+	}
+
 	__forceinline void c_player::setup_movement() {
 		using fn_t = void(__thiscall*)(anim_state_t*);
 
@@ -1007,7 +1013,7 @@ namespace supremacy::valve {
 
 	__forceinline cmd_context_t& c_player::cmd_context( ) {
 		return *reinterpret_cast< cmd_context_t* >(
-			reinterpret_cast< std::uintptr_t >( this ) + 0x34fcu
+			reinterpret_cast< std::uintptr_t >( this ) + (TWENTYTWENTY ? 0x34fcu : 0x34f8u)
 		);
 	}
 
@@ -1055,6 +1061,12 @@ namespace supremacy::valve {
 		using fn_t = int( __thiscall* )( decltype( this ), const char* );
 
 		return reinterpret_cast< fn_t >( g_context->addresses( ).m_lookup_bone )( this, name );
+	}
+
+	__forceinline int c_player::lookup_sequence(const char* name) {
+		using fn_t = int(__thiscall*)(decltype(this), const char*);
+
+		return reinterpret_cast<fn_t>(g_context->addresses().m_lookup_sequence)(this, name);
 	}
 
 	__forceinline int& c_player::armor_value( ) {
@@ -1155,7 +1167,7 @@ namespace supremacy::valve {
 
 	__forceinline bool& c_player::use_new_anim_state( ) {
 		return *reinterpret_cast<bool*>(
-			reinterpret_cast<std::uintptr_t>(this) + 0x3ac8u
+			reinterpret_cast<std::uintptr_t>(this) + (TWENTYTWENTY ? 0x3ac8u : 0x3ab4u)
 			);
 	}
 

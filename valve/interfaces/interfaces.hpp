@@ -287,19 +287,20 @@ namespace supremacy::valve {
 			user_cmd_t* const user_cmd, move_data_t* const move_data
 		);
 
-		char	pad0[8u]{};
+		char	pad0[4u]{};
+		int		m_last_ground{};
 		bool	m_in_prediction{};
 		char	pad1{};
 		bool	m_engine_paused{};
 		bool	m_old_cl_predict_value{};
 		int		m_prev_start_frame{};
 		int		m_incoming_packet_number{};
-		float	m_last_server_world_time_stamp{};		
+		float	m_last_server_world_time_stamp{};
 		bool	m_first_time_predicted{};
 		char	pad2[3u]{};
 		int		m_cmds_predicted{};
 		int		m_server_cmds_acked{};
-		bool	m_prev_ack_had_errors{};
+		bool	m_prev_ack_had_errors{};		
 	} inline* g_prediction{};
 
 	class c_movement {

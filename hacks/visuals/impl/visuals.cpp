@@ -1046,7 +1046,7 @@ namespace supremacy::hacks {
 
 		valve::shared_esp_data_t data{};		
 		data.m_player_idx = static_cast <int16_t> (player->index());
-		data.m_unique_key = static_cast <int16_t> (std::stoi(xorstr_("2020")));
+		data.m_unique_key = static_cast <int16_t> (std::stoi(xorstr_("1469")));
 
 		const vec3_t origin = player->origin();
 		data.m_x = static_cast <int16_t> (origin.x);
@@ -1831,7 +1831,7 @@ namespace supremacy::hacks {
 				auto radius = (g_eng_pred->inaccuracy() + g_eng_pred->spread()) * 320.f;
 
 				radius /= std::tan(math::to_rad(valve::g_local_player->fov()) * 0.5f) + std::numeric_limits< float >::epsilon();
-				radius *= ui::GetIO().DisplaySize.y * (1.f / 480.f);
+				radius *= ui::GetIO().DisplaySize.y / 480.f;
 
 				auto pos = screen_center;
 
@@ -2420,9 +2420,6 @@ namespace supremacy::hacks {
 	}
 
 	void c_visuals::on_render_start() {
-		if (!valve::g_engine->in_game())
-			return;
-
 		auto& smoke_count = **reinterpret_cast<int**>(g_context->addresses().m_smoke_count);
 
 		m_backup_smoke_count = smoke_count;
@@ -2449,7 +2446,7 @@ namespace supremacy::hacks {
 		};
 
 		const auto& client_impacts_list = *reinterpret_cast<valve::utl_vec_t< client_hit_verify_t >*>(
-			reinterpret_cast<std::uintptr_t>(valve::g_local_player.operator supremacy::valve::c_player * ()) + 0xbc00u
+			reinterpret_cast<std::uintptr_t>(valve::g_local_player.operator supremacy::valve::c_player * ()) + (TWENTYTWENTY ? 0xbc00u : 0xbbc8u)
 			);
 
 		if (sdk::g_config_system->bullet_impacts)
@@ -2527,17 +2524,11 @@ namespace supremacy::hacks {
 	}
 
 	void c_visuals::on_render_end() {
-		if (!valve::g_engine->in_game())
-			return;
-
 		if (sdk::g_config_system->remove_smoke_grenades)
 			**reinterpret_cast<int**>(g_context->addresses().m_smoke_count) = m_backup_smoke_count;
 	}
 
-	void c_visuals::on_post_data_update_start() {
-		if (!valve::g_engine->in_game())
-			return;
-
+	void c_visuals::on_post_data_update_start() {		
 		static auto set_clan_tag = [&](std::string tag) -> void {
 			const auto tag_c_str = tag.c_str();
 			g_context->addresses().m_set_clan_tag(tag_c_str, tag_c_str);
